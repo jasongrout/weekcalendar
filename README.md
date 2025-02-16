@@ -23,9 +23,9 @@ There are a few settings you can adjust in the Lua code:
 
 ```lua
   local print_dates = true -- should dates be printed in every square?
-  local year_one_line = false -- should the year in the left column be on one line?
-  local paper_width = 48 -- in inches: keep in sync with the geometry command above
-  local paper_height = 36 -- in inches: keep in sync with the geometry command above
+  local year_one_line = true -- should the year in the left column be on one line?
+  local paper_width = 36 -- in inches: keep in sync with the geometry command above
+  local paper_height = 24 -- in inches: keep in sync with the geometry command above
   local margin = 1 -- in inches: keep in sync with the geometry command above
 
   local start = 2000 -- year of first row
