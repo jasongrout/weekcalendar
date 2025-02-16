@@ -4,7 +4,20 @@ Print a large calendar of each week for a number of years. Sometimes this sort
 of thing is called a Memento Mori calendar or life calendar. I wanted a calendar
 with boxes big enough to write in.
 
-[Example](example-calendar.pdf) of a 36x24 inch calendar starting in the year 2000 for 50 years.
+[Example](example-calendar.pdf) of a 36x24 inch calendar starting in the year
+2000 for 50 years.
+
+Since a year is actually a little more than 52 weeks, you'll notice that some
+years are missing a 53rd week. Feel free to enjoy the extra "leap week" not on
+the calendar.
+
+## Generate calendar
+
+Install [TeX](https://tug.org/texlive/), then run
+```
+lualatex calendar.tex
+```
+to generate `calendar.pdf`.
 
 There are a few settings you can adjust in the Lua code:
 
@@ -27,5 +40,3 @@ adjustment.
 ```lua
   local box_height = .293
 ```
-
-Since a year is actually a little more than 52 weeks, you'll notice that some years are missing a 53rd week. Feel free to enjoy the extra "leap week" not on the calendar.
