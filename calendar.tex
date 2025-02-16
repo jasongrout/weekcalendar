@@ -90,7 +90,9 @@ function draw_grid()
   -- I tried calculating the box height automatically, but couldn't figure it out.
   -- It's easy enough to manually adjust the box height to fill the page. Turn on showframe
   -- above to see how much vertical space you have.
-  local box_height = .293
+  local box_height = .293 -- 50 years, 24" high, 1" margin
+  -- local box_height = .529 -- 50 years, 36" high, 1" margin
+  
   -- local offset = pt2in(12)
   -- local narrow = pt2in(16)
   -- local box_height = (paper_height - 2*margin - offset)/years - narrow
@@ -108,8 +110,9 @@ function draw_grid()
 
 
   -- Print week numbers across the top
-  local week_num_start = year_margin+box_width/2-pt2in(16)
-  local week_num_space = box_width + pt2in(7)
+    
+  local week_num_start = year_margin+box_width/10
+  local week_num_space = box_width + pt2in(6.8)
   tex.print(string.format([[\noindent\kern%.5fin]], week_num_start))
   for week = 1, 52 do
     tex.print(string.format([[{\hbox to %.5fin{\hfil \Large %d\hfil}}]], week_num_space, week))
@@ -130,7 +133,7 @@ function draw_grid()
     for week = 1, 52 do
       local date_string = ""
       if print_dates then
-        date_string = string.format([[\rlap{\smash{\tiny\scalefont{0.5} %s}}]], getWeekDates(start + year, week))
+        date_string = string.format([[\rlap{\smash{\tiny\scalefont{0.8} %s}}]], getWeekDates(start + year, week))
       end
       tex.print(string.format([[\fbox{%s\vbox to %.5fin{\vfil\hbox to %.5fin{\hfil}\vfil}}]],
            date_string, box_height, box_width))
