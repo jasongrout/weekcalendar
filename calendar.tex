@@ -1,0 +1,149 @@
+\documentclass{article}
+
+\usepackage[paperwidth=36in, paperheight=24in, margin=1in,
+% Use showframe to show the margin space
+% showframe
+]{geometry}
+\usepackage{luacode}
+
+\usepackage{scalefnt}
+\usepackage{graphicx}
+
+\setlength{\parindent}{0pt}
+
+\begin{document}
+\thispagestyle{empty}
+
+\begin{luacode*}
+
+function getWeekDates(year, week)
+    -- Validate week number (1-53)
+    if week < 1 or week > 53 then
+        return nil, nil, "Invalid week number"
+    end
+    
+    -- Get January 1st of the year
+    local jan1 = os.time({year=year, month=1, day=1})
+    
+    -- Get the day of week (1-7, where 1 is Sunday)
+    local jan1_wday = os.date("*t", jan1).wday
+    
+    -- Calculate days to first Monday of year
+    local days_to_monday = 0
+    if jan1_wday <= 4 then
+        days_to_monday = -(jan1_wday - 2)  -- 2 is Monday
+    else
+        days_to_monday = (9 - jan1_wday)
+    end
+    
+    -- Calculate start of requested week
+    local week_start = jan1 + ((days_to_monday + (week - 1) * 7) * 24 * 60 * 60)
+    local week_end = week_start + (6 * 24 * 60 * 60)
+    
+    -- Get detailed date info for start and end
+    local start_date = os.date("*t", week_start)
+    local end_date = os.date("*t", week_end)
+    
+    -- Month names
+    local months = {
+        "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+        "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
+    }
+    
+    -- Format the output string
+    local formatted_date
+    if start_date.month == end_date.month then
+        formatted_date = string.format("%s %d-%d",
+            months[start_date.month],
+            start_date.day,
+            end_date.day)
+    else
+        formatted_date = string.format("%s %d-%s %d",
+            months[start_date.month],
+            start_date.day,
+            months[end_date.month],
+            end_date.day)
+    end
+    
+    return formatted_date
+end
+
+function pt2in(pt)
+  return pt/72.0
+end
+
+function draw_grid()
+  local print_dates = true -- should dates be printed in every square?
+  local year_one_line = true -- should the year in the left column be on one line?
+  local paper_width = 36 -- in inches: keep in sync with the geometry command above
+  local paper_height = 24 -- in inches: keep in sync with the geometry command above
+  local margin = 1 -- in inches: keep in sync with the geometry command above
+
+  local start = 2000 -- year of first row
+  local years = 50 -- how many years
+
+  local year_margin = 0.5 -- The left margin for the year printout
+  if year_one_line then
+    year_margin = 0.8
+  end
+
+  -- I tried calculating the box height automatically, but couldn't figure it out.
+  -- It's easy enough to manually adjust the box height to fill the page. Turn on showframe
+  -- above to see how much vertical space you have.
+  local box_height = .293
+  -- local offset = pt2in(12)
+  -- local narrow = pt2in(16)
+  -- local box_height = (paper_height - 2*margin - offset)/years - narrow
+
+  -- The box width calculation seems to work, though
+  local box_width = (paper_width - 2*margin - year_margin)/52-pt2in(10.0)
+
+  texio.write_nl(string.format('**********************************WIDTH: %3f - HEIGHT: %3f', box_width, box_height))
+
+
+  -- Debugging for trying to get the box_height calculation above working
+  -- texio.write_nl(string.format('paper: %3f 2margin: %3f space: %3f, eachbox: %3f, offset: %3f narrow: %3f', 
+  --             paper_height, 2*margin, (paper_height - 2*margin - offset), (paper_height - 2*margin - offset)/years, offset, narrow))
+  -- texio.write_nl(string.format('rows: %3f, height: %3f, offset: %3f, narrow: %3f', years, box_height, offset, narrow))
+
+
+  -- Print week numbers across the top
+  local week_num_start = year_margin+box_width/2-pt2in(16)
+  local week_num_space = box_width + pt2in(7)
+  tex.print(string.format([[\noindent\kern%.5fin]], week_num_start))
+  for week = 1, 52 do
+    tex.print(string.format([[{\hbox to %.5fin{\hfil \Large %d\hfil}}]], week_num_space, week))
+  end
+  tex.print([[\par\vskip2pt\noindent]])
+  
+  -- Main grid
+  for year = 0, years do
+    -- Center year vertically relative to box height
+    if year_one_line then
+      tex.print(string.format([[{\vbox to %.5fin{\vfil\hbox to %.5fin{\hfil\Large %d: %d\hfil}\vfil}}]], 
+        box_height, year_margin, start + year, year))
+    else
+      tex.print(string.format([[{\vbox to %.5fin{\vfil\vbox{\Large \hbox to %.5fin{\hfil %d\hfil}\hbox to %.5fin{\hfil %d\hfil}}\vfil}}]], 
+        box_height, year_margin, start + year, year_margin, year))
+    end
+    
+    for week = 1, 52 do
+      local date_string = ""
+      if print_dates then
+        date_string = string.format([[\rlap{\smash{\tiny\scalefont{0.5} %s}}]], getWeekDates(start + year, week))
+      end
+      tex.print(string.format([[\fbox{%s\vbox to %.5fin{\vfil\hbox to %.5fin{\hfil}\vfil}}]],
+           date_string, box_height, box_width))
+    end
+    
+    -- A bit of space between each row
+    if year < years then
+      tex.print([[\par\vskip2pt\noindent]])
+    end
+  end
+end
+\end{luacode*}
+
+\directlua{draw_grid()}
+
+\end{document}
