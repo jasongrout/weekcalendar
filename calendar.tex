@@ -1,6 +1,6 @@
 \documentclass{article}
 
-\usepackage[paperwidth=36in, paperheight=24in, margin=1in,
+\usepackage[paperwidth=48in, paperheight=36in, margin=1in,
 % Use showframe to show the margin space
 % showframe
 ]{geometry}
@@ -74,13 +74,13 @@ end
 
 function draw_grid()
   local print_dates = true -- should dates be printed in every square?
-  local year_one_line = true -- should the year in the left column be on one line?
-  local paper_width = 36 -- in inches: keep in sync with the geometry command above
-  local paper_height = 24 -- in inches: keep in sync with the geometry command above
+  local year_one_line = false -- should the year in the left column be on one line?
+  local paper_width = 48 -- in inches: keep in sync with the geometry command above
+  local paper_height = 36 -- in inches: keep in sync with the geometry command above
   local margin = 1 -- in inches: keep in sync with the geometry command above
 
-  local start = 2000 -- year of first row
-  local years = 50 -- how many years
+  local start = 2026 -- year of first row
+  local years = 25 -- how many years
 
   local year_margin = 0.5 -- The left margin for the year printout
   if year_one_line then
@@ -90,9 +90,10 @@ function draw_grid()
   -- I tried calculating the box height automatically, but couldn't figure it out.
   -- It's easy enough to manually adjust the box height to fill the page. Turn on showframe
   -- above to see how much vertical space you have.
-  local box_height = .293 -- 50 years, 24" high, 1" margin
+  -- local box_height = .293 -- 50 years, 24" high, 1" margin
   -- local box_height = .529 -- 50 years, 36" high, 1" margin
-  
+    local box_height = 1.16 -- 0 years, 36" high, 1" margin
+
   -- local offset = pt2in(12)
   -- local narrow = pt2in(16)
   -- local box_height = (paper_height - 2*margin - offset)/years - narrow
