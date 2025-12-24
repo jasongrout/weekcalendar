@@ -75,6 +75,7 @@ end
 function draw_grid()
   local print_dates = true -- should dates be printed in every square?
   local year_one_line = false -- should the year in the left column be on one line?
+  local year_count = false -- print year count after year?
   local paper_width = 48 -- in inches: keep in sync with the geometry command above
   local paper_height = 36 -- in inches: keep in sync with the geometry command above
   local margin = 1 -- in inches: keep in sync with the geometry command above
@@ -123,12 +124,17 @@ function draw_grid()
   -- Main grid
   for year = 0, years do
     -- Center year vertically relative to box height
-    if year_one_line then
-      tex.print(string.format([[{\vbox to %.5fin{\vfil\hbox to %.5fin{\hfil\Large %d: %d\hfil}\vfil}}]], 
-        box_height, year_margin, start + year, year))
+    if year_count then
+      if year_one_line then
+        tex.print(string.format([[{\vbox to %.5fin{\vfil\hbox to %.5fin{\hfil\Large %d: %d\hfil}\vfil}}]],
+          box_height, year_margin, start + year, year))
+      else
+        tex.print(string.format([[{\vbox to %.5fin{\vfil\vbox{\Large \hbox to %.5fin{\hfil %d\hfil}\hbox to %.5fin{\hfil %d\hfil}}\vfil}}]],
+          box_height, year_margin, start + year, year_margin, year))
+      end
     else
-      tex.print(string.format([[{\vbox to %.5fin{\vfil\vbox{\Large \hbox to %.5fin{\hfil %d\hfil}\hbox to %.5fin{\hfil %d\hfil}}\vfil}}]], 
-        box_height, year_margin, start + year, year_margin, year))
+      tex.print(string.format([[{\vbox to %.5fin{\vfil\hbox to %.5fin{\hfil\Large %d\hfil}\vfil}}]],
+        box_height, year_margin, start + year))
     end
     
     for week = 1, 52 do
