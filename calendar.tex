@@ -1,5 +1,3 @@
-% pdfcrop --bbox "0 1800 612 2592" calendar.pdf test-print.pdf
-
 \documentclass{article}
 
 \usepackage[paperwidth=60in, paperheight=36in, margin=1in,
@@ -17,19 +15,20 @@
 \thispagestyle{empty}
 
 \begin{luacode*}
+local gridlib = require("gridlib")
 
 function getWeekDates(year, week)
     -- Validate week number (1-53)
     if week < 1 or week > 53 then
         return nil, nil, "Invalid week number"
     end
-    
+
     -- Get January 1st of the year
     local jan1 = os.time({year=year, month=1, day=1})
-    
+
     -- Get the day of week (1-7, where 1 is Sunday)
     local jan1_wday = os.date("*t", jan1).wday
-    
+
     -- Calculate days to first Monday of year
     local days_to_monday = 0
     if jan1_wday <= 4 then
@@ -37,41 +36,31 @@ function getWeekDates(year, week)
     else
         days_to_monday = (9 - jan1_wday)
     end
-    
+
     -- Calculate start of requested week
     local week_start = jan1 + ((days_to_monday + (week - 1) * 7) * 24 * 60 * 60)
     local week_end = week_start + (6 * 24 * 60 * 60)
-    
+
     -- Get detailed date info for start and end
     local start_date = os.date("*t", week_start)
     local end_date = os.date("*t", week_end)
-    
-    -- Month names
-    local months = {
-        "Jan", "Feb", "Mar", "Apr", "May", "Jun",
-        "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
-    }
-    
+
     -- Format the output string
     local formatted_date
     if start_date.month == end_date.month then
         formatted_date = string.format("%s %d-%d",
-            months[start_date.month],
+            gridlib.month_names[start_date.month],
             start_date.day,
             end_date.day)
     else
         formatted_date = string.format("%s %d-%s %d",
-            months[start_date.month],
+            gridlib.month_names[start_date.month],
             start_date.day,
-            months[end_date.month],
+            gridlib.month_names[end_date.month],
             end_date.day)
     end
-    
-    return formatted_date
-end
 
-function pt2in(pt)
-  return pt/72.0
+    return formatted_date
 end
 
 function print_crop_command(paper_width, paper_height, test_width, test_height)
@@ -111,71 +100,52 @@ function draw_grid()
     year_margin = 0.8
   end
 
-  -- Calculate box width (this formula works well)
-  -- The 10pt accounts for \fbox borders/padding plus inter-box spacing
-  local box_width = (c.paper_width - 2*c.margin - year_margin)/52 - pt2in(10.0)
-  local week_num_space = box_width + pt2in(6.8)
+  -- Generate labels
+  local top_labels = gridlib.number_range(1, 52)
+  local left_labels = gridlib.number_range(c.start, c.years + 1)
 
-  -- Measure actual header height by running TeX locally and reading the box
-  tex.runtoks(function()
-    tex.sprint(string.format([[\setbox0=\hbox{%s Xg}]], c.week_num_size))
-  end)
-  local header_height_pt = tex.box[0].height / 65536
-  local header_space = pt2in(header_height_pt + 4) -- measured height + vskip (2pt) + padding
-
-  texio.write_nl(string.format('Measured header height: %.1fpt', header_height_pt))
-
-  -- Calculate box_height so vertical gap equals horizontal gap
-  -- Horizontally: adjacent \fbox boxes touch, so visible gap = 2 * fboxrule = 0.8pt
-  -- Vertically: we need to add explicit vskip to create the same gap
-  -- The fbox adds fbox_overhead to each box's rendered size
-  local num_rows = c.years + 1
-  local fbox_overhead = pt2in(6.8) -- 2*(fboxrule + fboxsep) = 2*(0.4pt + 3pt)
-  local visible_gap = pt2in(3.2) -- small gap to match horizontal inter-box spacing
-  local available = c.paper_height - 2*c.margin - header_space
-  -- Total = num_rows * (box_height + fbox_overhead) + (num_rows - 1) * visible_gap
-  local box_height = (available - num_rows * fbox_overhead - (num_rows - 1) * visible_gap) / num_rows
-
-  texio.write_nl(string.format('**********************************WIDTH: %.3f - HEIGHT: %.3f', box_width, box_height))
-
-  -- Print week numbers across the top
-  local week_num_start = year_margin + box_width/10
-  tex.print(string.format([[\noindent\kern%.5fin]], week_num_start))
-  for week = 1, 52 do
-    tex.print(string.format([[{\hbox to %.5fin{\hfil %s %d\hfil}}]], week_num_space, c.week_num_size, week))
-  end
-  tex.print([[\par\vskip2pt\noindent]])
-
-  -- Main grid
-  for year = 0, c.years do
-    -- Center year vertically relative to box height
+  -- Custom left label function for year_count mode
+  local function make_left_label(row)
+    local year = c.start + row - 1
     if c.year_count then
       if c.year_one_line then
-        tex.print(string.format([[{\vbox to %.5fin{\vfil\hbox to %.5fin{\hfil%s %d: %d\hfil}\vfil}}]],
-          box_height, year_margin, c.year_size, c.start + year, year))
+        return string.format("%d: %d", year, row - 1)
       else
-        tex.print(string.format([[{\vbox to %.5fin{\vfil\vbox{%s \hbox to %.5fin{\hfil %d\hfil}\hbox to %.5fin{\hfil %d\hfil}}\vfil}}]],
-          box_height, c.year_size, year_margin, c.start + year, year_margin, year))
+        return string.format("\\vbox{%s \\hbox to %.5fin{\\hfil %d\\hfil}\\hbox to %.5fin{\\hfil %d\\hfil}}",
+          c.year_size, year_margin, year, year_margin, row - 1)
       end
     else
-      tex.print(string.format([[{\vbox to %.5fin{\vfil\hbox to %.5fin{\hfil%s %d\hfil}\vfil}}]],
-        box_height, year_margin, c.year_size, c.start + year))
-    end
-
-    for week = 1, 52 do
-      local date_string = ""
-      if c.print_dates then
-        date_string = string.format([[\rlap{\smash{%s %s}}]], c.date_size, getWeekDates(c.start + year, week))
-      end
-      tex.print(string.format([[\fbox{%s\vbox to %.5fin{\vfil\hbox to %.5fin{\hfil}\vfil}}]],
-           date_string, box_height, box_width))
-    end
-
-    -- Space between each row (equal to visible_gap to match horizontal spacing)
-    if year < c.years then
-      tex.print(string.format([[\par\nointerlineskip\vskip%.5fin\noindent]], visible_gap))
+      return tostring(year)
     end
   end
+
+  -- Rebuild left_labels with custom formatting if needed
+  if c.year_count and not c.year_one_line then
+    left_labels = {}
+    for i = 0, c.years do
+      left_labels[#left_labels + 1] = make_left_label(i + 1)
+    end
+  end
+
+  -- Cell content function for dates
+  local function cell_content(row, col)
+    if c.print_dates then
+      local year = c.start + row - 1
+      return string.format([[\rlap{\smash{%s %s}}]], c.date_size, getWeekDates(year, col))
+    end
+    return ""
+  end
+
+  -- Calculate grid dimensions from page size
+  local grid_width = c.paper_width - 2 * c.margin
+  local grid_height = c.paper_height - 2 * c.margin
+
+  gridlib.draw_grid(grid_width, grid_height, top_labels, left_labels, {
+    top_font_size = c.week_num_size,
+    left_font_size = c.year_size,
+    left_margin = year_margin,
+    cell_content = cell_content,
+  })
 
   -- Print the pdfcrop command for test printing
   print_crop_command(c.paper_width, c.paper_height, 8.5, 11)
