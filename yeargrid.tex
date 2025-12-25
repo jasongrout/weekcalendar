@@ -1,6 +1,6 @@
 \documentclass{article}
 
-\usepackage[paperwidth=60in, paperheight=36in, margin=1in,
+\usepackage[paperwidth=36in, paperheight=24in, margin=1in,
 % Use showframe to show the margin space
 % showframe
 ]{geometry}
@@ -19,20 +19,16 @@ local gridlib = require("gridlib")
 
 -- Configuration
 cfg = {
-  paper_width = 60,        -- in inches: keep in sync with the geometry command above
-  paper_height = 36,       -- in inches: keep in sync with the geometry command above
-  margin = 1,              -- in inches: keep in sync with the geometry command above
-  start_year = 2026,       -- first year column
-  num_years = 30,          -- how many years (columns)
+  start_year = 2004,       -- first year column
+  num_years = 22,          -- how many years (columns)
 }
 
 -- Generate labels
 local top_labels = gridlib.number_range(cfg.start_year, cfg.num_years)
 local left_labels = gridlib.month_names
 
--- Calculate grid dimensions from page size
-local grid_width = cfg.paper_width - 2 * cfg.margin
-local grid_height = cfg.paper_height - 2 * cfg.margin
+-- Get grid dimensions from TeX (set by geometry package)
+local paper_width, paper_height, grid_width, grid_height = gridlib.get_page_dimensions()
 
 -- Draw the grid
 gridlib.draw_grid(grid_width, grid_height, top_labels, left_labels, {
@@ -40,6 +36,9 @@ gridlib.draw_grid(grid_width, grid_height, top_labels, left_labels, {
   left_font_size = [[\LARGE]],
   left_margin = 0.6,
 })
+
+-- Print the pdfcrop command for test printing
+gridlib.print_crop_command("yeargrid.pdf", paper_width, paper_height)
 \end{luacode*}
 
 \end{document}

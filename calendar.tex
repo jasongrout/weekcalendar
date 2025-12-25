@@ -63,26 +63,12 @@ function getWeekDates(year, week)
     return formatted_date
 end
 
-function print_crop_command(paper_width, paper_height, test_width, test_height)
-  local crop_width = test_width * 72  -- convert to points
-  local crop_height = test_height * 72  -- convert to points
-  local total_height = paper_height * 72  -- total page height in points
-  local crop_bottom = total_height - crop_height
-  texio.write_nl(string.format('**********************************'))
-  texio.write_nl(string.format('To print upper-left %.1fx%.1f test section, run:', test_width, test_height))
-  texio.write_nl(string.format('pdfcrop --bbox "0 %d %d %d" calendar.pdf test-print.pdf',
-    crop_bottom, crop_width, total_height))
-  texio.write_nl(string.format('**********************************'))
-end
 
 -- Configuration (set these values)
 cfg = {
   print_dates = true,      -- should dates be printed in every square?
   year_one_line = false,   -- should the year in the left column be on one line?
   year_count = false,      -- print year count after year?
-  paper_width = 60,        -- in inches: keep in sync with the geometry command above
-  paper_height = 36,       -- in inches: keep in sync with the geometry command above
-  margin = 1,              -- in inches: keep in sync with the geometry command above
   start = 2026,            -- year of first row
   years = 30,              -- how many years
   -- Font sizes: \tiny \scriptsize \footnotesize \small \normalsize
@@ -136,9 +122,8 @@ function draw_grid()
     return ""
   end
 
-  -- Calculate grid dimensions from page size
-  local grid_width = c.paper_width - 2 * c.margin
-  local grid_height = c.paper_height - 2 * c.margin
+  -- Get grid dimensions from TeX (set by geometry package)
+  local paper_width, paper_height, grid_width, grid_height = gridlib.get_page_dimensions()
 
   gridlib.draw_grid(grid_width, grid_height, top_labels, left_labels, {
     top_font_size = c.week_num_size,
@@ -148,7 +133,7 @@ function draw_grid()
   })
 
   -- Print the pdfcrop command for test printing
-  print_crop_command(c.paper_width, c.paper_height, 8.5, 11)
+  gridlib.print_crop_command("calendar.pdf", paper_width, paper_height)
 end
 \end{luacode*}
 

@@ -6,6 +6,22 @@ function gridlib.pt2in(pt)
   return pt / 72.0
 end
 
+-- Convert TeX scaled points to inches
+-- TeX dimensions are stored in scaled points (sp), where 1pt = 65536sp
+function gridlib.sp2in(sp)
+  return sp / 65536 / 72.27
+end
+
+-- Read page dimensions from TeX (set by geometry package)
+-- Returns paper_width, paper_height, text_width, text_height in inches
+function gridlib.get_page_dimensions()
+  local paper_width = gridlib.sp2in(tex.dimen.paperwidth)
+  local paper_height = gridlib.sp2in(tex.dimen.paperheight)
+  local text_width = gridlib.sp2in(tex.dimen.textwidth)
+  local text_height = gridlib.sp2in(tex.dimen.textheight)
+  return paper_width, paper_height, text_width, text_height
+end
+
 -- Draw a grid with labels along the top and left side
 -- Parameters:
 --   width: total width of grid area in inches (excluding left_margin)
@@ -100,5 +116,25 @@ gridlib.month_names = {
   "Jan", "Feb", "Mar", "Apr", "May", "Jun",
   "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
 }
+
+-- Print pdfcrop command for extracting a test section from the PDF
+-- Parameters:
+--   pdf_name: output PDF filename (e.g., "calendar.pdf")
+--   paper_width, paper_height: full page dimensions in inches
+--   test_width, test_height: size of test section to extract (default: 8.5x11)
+function gridlib.print_crop_command(pdf_name, paper_width, paper_height, test_width, test_height)
+  test_width = test_width or 8.5
+  test_height = test_height or 11
+  local crop_width = test_width * 72  -- convert to points
+  local crop_height = test_height * 72  -- convert to points
+  local total_height = paper_height * 72  -- total page height in points
+  local crop_bottom = total_height - crop_height
+  local output_name = pdf_name:gsub("%.pdf$", "") .. "-test.pdf"
+  texio.write_nl(string.format('**********************************'))
+  texio.write_nl(string.format('To print upper-left %.1fx%.1f test section, run:', test_width, test_height))
+  texio.write_nl(string.format('pdfcrop --bbox "0 %.0f %.0f %.0f" %s %s',
+    crop_bottom, crop_width, total_height, pdf_name, output_name))
+  texio.write_nl(string.format('**********************************'))
+end
 
 return gridlib
