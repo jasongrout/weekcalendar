@@ -108,21 +108,27 @@ function draw_grid()
     year_margin = 0.8
   end
 
-  -- I tried calculating the box height automatically, but couldn't figure it out.
-  -- It's easy enough to manually adjust the box height to fill the page. Turn on showframe
-  -- above to see how much vertical space you have.
-  -- local box_height = .293 -- 50 years, 24" high, 1" margin
-  -- local box_height = .529 -- 50 years, 36" high, 1" margin
-    local box_height = 1.16 -- 0 years, 36" high, 1" margin
+  -- Calculate box width (this formula works well)
+  -- The 10pt accounts for \fbox borders/padding plus inter-box spacing
+  local box_width = (paper_width - 2*margin - year_margin)/52 - pt2in(10.0)
 
-  -- local offset = pt2in(12)
-  -- local narrow = pt2in(16)
-  -- local box_height = (paper_height - 2*margin - offset)/years - narrow
+  -- Calculate the horizontal gap between boxes
+  -- 52 * (box_width + h_gap) + year_margin = paper_width - 2*margin
+  local h_gap = (paper_width - 2*margin - year_margin)/52 - box_width
 
-  -- The box width calculation seems to work, though
-  local box_width = (paper_width - 2*margin - year_margin)/52-pt2in(10.0)
+  -- Calculate box_height so vertical gap equals horizontal gap
+  -- Horizontally: adjacent \fbox boxes touch, so visible gap = 2 * fboxrule = 0.8pt
+  -- Vertically: we need to add explicit vskip to create the same gap
+  -- The fbox adds fbox_overhead to each box's rendered size
+  local num_rows = years + 1
+  local header_space = pt2in(24) -- space for week numbers header row
+  local fbox_overhead = pt2in(6.8) -- 2*(fboxrule + fboxsep) = 2*(0.4pt + 3pt)
+  local visible_gap = pt2in(3.2) -- small gap to match horizontal inter-box spacing
+  local available = paper_height - 2*margin - header_space
+  -- Total = num_rows * (box_height + fbox_overhead) + (num_rows - 1) * visible_gap
+  local box_height = (available - num_rows * fbox_overhead - (num_rows - 1) * visible_gap) / num_rows
 
-  texio.write_nl(string.format('**********************************WIDTH: %3f - HEIGHT: %3f', box_width, box_height))
+  texio.write_nl(string.format('**********************************WIDTH: %.3f - HEIGHT: %.3f - H_GAP: %.3f (%.1fpt)', box_width, box_height, h_gap, h_gap*72))
 
 
   -- Debugging for trying to get the box_height calculation above working
@@ -166,9 +172,9 @@ function draw_grid()
            date_string, box_height, box_width))
     end
     
-    -- A bit of space between each row
+    -- Space between each row (equal to visible_gap to match horizontal spacing)
     if year < years then
-      tex.print([[\par\vskip2pt\noindent]])
+      tex.print(string.format([[\par\nointerlineskip\vskip%.5fin\noindent]], visible_gap))
     end
   end
 
