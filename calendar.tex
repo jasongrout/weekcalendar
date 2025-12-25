@@ -116,23 +116,11 @@ function draw_grid()
   local box_width = (c.paper_width - 2*c.margin - year_margin)/52 - pt2in(10.0)
   local week_num_space = box_width + pt2in(6.8)
 
-  -- Store computed values for phase 2
-  cfg.year_margin = year_margin
-  cfg.box_width = box_width
-  cfg.week_num_space = week_num_space
-
-  -- Measure actual header height by creating a temporary box, then call phase 2
-  local header_content = string.format([[{\hbox to %.5fin{\hfil %s 52\hfil}}]], week_num_space, c.week_num_size)
-  tex.sprint([[\setbox0=\hbox{]] .. header_content .. [[}\xdef\headerheight{\the\ht0}]])
-  tex.sprint([[\directlua{draw_grid_phase2()}]])
-end
-
-function draw_grid_phase2()
-  local c = cfg -- shorthand
-
-  -- Get measured header height from box0 (in scaled points, 65536 sp = 1pt)
-  local header_height_sp = tex.box[0].height
-  local header_height_pt = header_height_sp / 65536
+  -- Measure actual header height by running TeX locally and reading the box
+  tex.runtoks(function()
+    tex.sprint(string.format([[\setbox0=\hbox{%s Xg}]], c.week_num_size))
+  end)
+  local header_height_pt = tex.box[0].height / 65536
   local header_space = pt2in(header_height_pt + 4) -- measured height + vskip (2pt) + padding
 
   texio.write_nl(string.format('Measured header height: %.1fpt', header_height_pt))
@@ -148,13 +136,13 @@ function draw_grid_phase2()
   -- Total = num_rows * (box_height + fbox_overhead) + (num_rows - 1) * visible_gap
   local box_height = (available - num_rows * fbox_overhead - (num_rows - 1) * visible_gap) / num_rows
 
-  texio.write_nl(string.format('**********************************WIDTH: %.3f - HEIGHT: %.3f', c.box_width, box_height))
+  texio.write_nl(string.format('**********************************WIDTH: %.3f - HEIGHT: %.3f', box_width, box_height))
 
   -- Print week numbers across the top
-  local week_num_start = c.year_margin + c.box_width/10
+  local week_num_start = year_margin + box_width/10
   tex.print(string.format([[\noindent\kern%.5fin]], week_num_start))
   for week = 1, 52 do
-    tex.print(string.format([[{\hbox to %.5fin{\hfil %s %d\hfil}}]], c.week_num_space, c.week_num_size, week))
+    tex.print(string.format([[{\hbox to %.5fin{\hfil %s %d\hfil}}]], week_num_space, c.week_num_size, week))
   end
   tex.print([[\par\vskip2pt\noindent]])
 
@@ -164,14 +152,14 @@ function draw_grid_phase2()
     if c.year_count then
       if c.year_one_line then
         tex.print(string.format([[{\vbox to %.5fin{\vfil\hbox to %.5fin{\hfil%s %d: %d\hfil}\vfil}}]],
-          box_height, c.year_margin, c.year_size, c.start + year, year))
+          box_height, year_margin, c.year_size, c.start + year, year))
       else
         tex.print(string.format([[{\vbox to %.5fin{\vfil\vbox{%s \hbox to %.5fin{\hfil %d\hfil}\hbox to %.5fin{\hfil %d\hfil}}\vfil}}]],
-          box_height, c.year_size, c.year_margin, c.start + year, c.year_margin, year))
+          box_height, c.year_size, year_margin, c.start + year, year_margin, year))
       end
     else
       tex.print(string.format([[{\vbox to %.5fin{\vfil\hbox to %.5fin{\hfil%s %d\hfil}\vfil}}]],
-        box_height, c.year_margin, c.year_size, c.start + year))
+        box_height, year_margin, c.year_size, c.start + year))
     end
 
     for week = 1, 52 do
@@ -180,7 +168,7 @@ function draw_grid_phase2()
         date_string = string.format([[\rlap{\smash{%s %s}}]], c.date_size, getWeekDates(c.start + year, week))
       end
       tex.print(string.format([[\fbox{%s\vbox to %.5fin{\vfil\hbox to %.5fin{\hfil}\vfil}}]],
-           date_string, box_height, c.box_width))
+           date_string, box_height, box_width))
     end
 
     -- Space between each row (equal to visible_gap to match horizontal spacing)
