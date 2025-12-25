@@ -86,115 +86,111 @@ function print_crop_command(paper_width, paper_height, test_width, test_height)
   texio.write_nl(string.format('**********************************'))
 end
 
-function draw_grid()
-  local print_dates = true -- should dates be printed in every square?
-  local year_one_line = false -- should the year in the left column be on one line?
-  local year_count = false -- print year count after year?
-  local paper_width = 60 -- in inches: keep in sync with the geometry command above
-  local paper_height = 36 -- in inches: keep in sync with the geometry command above
-  local margin = 1 -- in inches: keep in sync with the geometry command above
-
-  local start = 2026 -- year of first row
-  local years = 25 -- how many years
-
+-- Configuration (set these values)
+cfg = {
+  print_dates = true,      -- should dates be printed in every square?
+  year_one_line = false,   -- should the year in the left column be on one line?
+  year_count = false,      -- print year count after year?
+  paper_width = 60,        -- in inches: keep in sync with the geometry command above
+  paper_height = 36,       -- in inches: keep in sync with the geometry command above
+  margin = 1,              -- in inches: keep in sync with the geometry command above
+  start = 2026,            -- year of first row
+  years = 25,              -- how many years
   -- Font sizes: \tiny \scriptsize \footnotesize \small \normalsize
   -- \large \Large \LARGE \huge \Huge
-  local week_num_size = [[\LARGE]] -- week numbers across the top
-  local year_size = [[\LARGE]] -- year numbers in left column
-  local date_size = [[\footnotesize]] -- dates in each box
+  week_num_size = [[\LARGE]],      -- week numbers across the top
+  year_size = [[\LARGE]],          -- year numbers in left column
+  date_size = [[\footnotesize]],   -- dates in each box
+}
 
-  -- Font size heights in points (approximate, for 10pt base)
-  local font_heights = {
-    ["\\tiny"] = 6,
-    ["\\scriptsize"] = 8,
-    ["\\footnotesize"] = 9,
-    ["\\small"] = 10,
-    ["\\normalsize"] = 12,
-    ["\\large"] = 14,
-    ["\\Large"] = 17,
-    ["\\LARGE"] = 20,
-    ["\\huge"] = 25,
-    ["\\Huge"] = 30
-  }
+function draw_grid()
+  local c = cfg -- shorthand
 
-  local year_margin = 0.5 -- The left margin for the year printout
-  if year_one_line then
+  local year_margin = 0.5
+  if c.year_one_line then
     year_margin = 0.8
   end
 
   -- Calculate box width (this formula works well)
   -- The 10pt accounts for \fbox borders/padding plus inter-box spacing
-  local box_width = (paper_width - 2*margin - year_margin)/52 - pt2in(10.0)
+  local box_width = (c.paper_width - 2*c.margin - year_margin)/52 - pt2in(10.0)
+  local week_num_space = box_width + pt2in(6.8)
 
-  -- Calculate the horizontal gap between boxes
-  -- 52 * (box_width + h_gap) + year_margin = paper_width - 2*margin
-  local h_gap = (paper_width - 2*margin - year_margin)/52 - box_width
+  -- Store computed values for phase 2
+  cfg.year_margin = year_margin
+  cfg.box_width = box_width
+  cfg.week_num_space = week_num_space
+
+  -- Measure actual header height by creating a temporary box, then call phase 2
+  local header_content = string.format([[{\hbox to %.5fin{\hfil %s 52\hfil}}]], week_num_space, c.week_num_size)
+  tex.sprint([[\setbox0=\hbox{]] .. header_content .. [[}\xdef\headerheight{\the\ht0}]])
+  tex.sprint([[\directlua{draw_grid_phase2()}]])
+end
+
+function draw_grid_phase2()
+  local c = cfg -- shorthand
+
+  -- Get measured header height from box0 (in scaled points, 65536 sp = 1pt)
+  local header_height_sp = tex.box[0].height
+  local header_height_pt = header_height_sp / 65536
+  local header_space = pt2in(header_height_pt + 4) -- measured height + vskip (2pt) + padding
+
+  texio.write_nl(string.format('Measured header height: %.1fpt', header_height_pt))
 
   -- Calculate box_height so vertical gap equals horizontal gap
   -- Horizontally: adjacent \fbox boxes touch, so visible gap = 2 * fboxrule = 0.8pt
   -- Vertically: we need to add explicit vskip to create the same gap
   -- The fbox adds fbox_overhead to each box's rendered size
-  local num_rows = years + 1
-  local week_num_height = font_heights[week_num_size] or 20 -- default to LARGE if not found
-  local header_space = pt2in(week_num_height + 4) -- font height + vskip (2pt) + some padding
+  local num_rows = c.years + 1
   local fbox_overhead = pt2in(6.8) -- 2*(fboxrule + fboxsep) = 2*(0.4pt + 3pt)
   local visible_gap = pt2in(3.2) -- small gap to match horizontal inter-box spacing
-  local available = paper_height - 2*margin - header_space
+  local available = c.paper_height - 2*c.margin - header_space
   -- Total = num_rows * (box_height + fbox_overhead) + (num_rows - 1) * visible_gap
   local box_height = (available - num_rows * fbox_overhead - (num_rows - 1) * visible_gap) / num_rows
 
-  texio.write_nl(string.format('**********************************WIDTH: %.3f - HEIGHT: %.3f - H_GAP: %.3f (%.1fpt)', box_width, box_height, h_gap, h_gap*72))
-
-
-  -- Debugging for trying to get the box_height calculation above working
-  -- texio.write_nl(string.format('paper: %3f 2margin: %3f space: %3f, eachbox: %3f, offset: %3f narrow: %3f', 
-  --             paper_height, 2*margin, (paper_height - 2*margin - offset), (paper_height - 2*margin - offset)/years, offset, narrow))
-  -- texio.write_nl(string.format('rows: %3f, height: %3f, offset: %3f, narrow: %3f', years, box_height, offset, narrow))
-
+  texio.write_nl(string.format('**********************************WIDTH: %.3f - HEIGHT: %.3f', c.box_width, box_height))
 
   -- Print week numbers across the top
-    
-  local week_num_start = year_margin+box_width/10
-  local week_num_space = box_width + pt2in(6.8)
+  local week_num_start = c.year_margin + c.box_width/10
   tex.print(string.format([[\noindent\kern%.5fin]], week_num_start))
   for week = 1, 52 do
-    tex.print(string.format([[{\hbox to %.5fin{\hfil %s %d\hfil}}]], week_num_space, week_num_size, week))
+    tex.print(string.format([[{\hbox to %.5fin{\hfil %s %d\hfil}}]], c.week_num_space, c.week_num_size, week))
   end
   tex.print([[\par\vskip2pt\noindent]])
-  
+
   -- Main grid
-  for year = 0, years do
+  for year = 0, c.years do
     -- Center year vertically relative to box height
-    if year_count then
-      if year_one_line then
+    if c.year_count then
+      if c.year_one_line then
         tex.print(string.format([[{\vbox to %.5fin{\vfil\hbox to %.5fin{\hfil%s %d: %d\hfil}\vfil}}]],
-          box_height, year_margin, year_size, start + year, year))
+          box_height, c.year_margin, c.year_size, c.start + year, year))
       else
         tex.print(string.format([[{\vbox to %.5fin{\vfil\vbox{%s \hbox to %.5fin{\hfil %d\hfil}\hbox to %.5fin{\hfil %d\hfil}}\vfil}}]],
-          box_height, year_size, year_margin, start + year, year_margin, year))
+          box_height, c.year_size, c.year_margin, c.start + year, c.year_margin, year))
       end
     else
       tex.print(string.format([[{\vbox to %.5fin{\vfil\hbox to %.5fin{\hfil%s %d\hfil}\vfil}}]],
-        box_height, year_margin, year_size, start + year))
+        box_height, c.year_margin, c.year_size, c.start + year))
     end
-    
+
     for week = 1, 52 do
       local date_string = ""
-      if print_dates then
-        date_string = string.format([[\rlap{\smash{%s %s}}]], date_size, getWeekDates(start + year, week))
+      if c.print_dates then
+        date_string = string.format([[\rlap{\smash{%s %s}}]], c.date_size, getWeekDates(c.start + year, week))
       end
       tex.print(string.format([[\fbox{%s\vbox to %.5fin{\vfil\hbox to %.5fin{\hfil}\vfil}}]],
-           date_string, box_height, box_width))
+           date_string, box_height, c.box_width))
     end
-    
+
     -- Space between each row (equal to visible_gap to match horizontal spacing)
-    if year < years then
+    if year < c.years then
       tex.print(string.format([[\par\nointerlineskip\vskip%.5fin\noindent]], visible_gap))
     end
   end
 
   -- Print the pdfcrop command for test printing
-  print_crop_command(paper_width, paper_height, 8.5, 11)
+  print_crop_command(c.paper_width, c.paper_height, 8.5, 11)
 end
 \end{luacode*}
 
