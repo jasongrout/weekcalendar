@@ -1,6 +1,8 @@
+% pdfcrop --bbox "0 1800 612 2592" calendar.pdf test-print.pdf
+
 \documentclass{article}
 
-\usepackage[paperwidth=48in, paperheight=36in, margin=1in,
+\usepackage[paperwidth=60in, paperheight=36in, margin=1in,
 % Use showframe to show the margin space
 % showframe
 ]{geometry}
@@ -72,16 +74,34 @@ function pt2in(pt)
   return pt/72.0
 end
 
+function print_crop_command(paper_width, paper_height, test_width, test_height)
+  local crop_width = test_width * 72  -- convert to points
+  local crop_height = test_height * 72  -- convert to points
+  local total_height = paper_height * 72  -- total page height in points
+  local crop_bottom = total_height - crop_height
+  texio.write_nl(string.format('**********************************'))
+  texio.write_nl(string.format('To print upper-left %.1fx%.1f test section, run:', test_width, test_height))
+  texio.write_nl(string.format('pdfcrop --bbox "0 %d %d %d" calendar.pdf test-print.pdf',
+    crop_bottom, crop_width, total_height))
+  texio.write_nl(string.format('**********************************'))
+end
+
 function draw_grid()
   local print_dates = true -- should dates be printed in every square?
   local year_one_line = false -- should the year in the left column be on one line?
   local year_count = false -- print year count after year?
-  local paper_width = 48 -- in inches: keep in sync with the geometry command above
+  local paper_width = 60 -- in inches: keep in sync with the geometry command above
   local paper_height = 36 -- in inches: keep in sync with the geometry command above
   local margin = 1 -- in inches: keep in sync with the geometry command above
 
   local start = 2026 -- year of first row
   local years = 25 -- how many years
+
+  -- Font sizes: \tiny \scriptsize \footnotesize \small \normalsize 
+  -- \large \Large \LARGE \huge \Huge
+  local week_num_size = [[\LARGE]] -- week numbers across the top
+  local year_size = [[\LARGE]] -- year numbers in left column
+  local date_size = [[\footnotesize]] -- dates in each box
 
   local year_margin = 0.5 -- The left margin for the year printout
   if year_one_line then
@@ -117,7 +137,7 @@ function draw_grid()
   local week_num_space = box_width + pt2in(6.8)
   tex.print(string.format([[\noindent\kern%.5fin]], week_num_start))
   for week = 1, 52 do
-    tex.print(string.format([[{\hbox to %.5fin{\hfil \Large %d\hfil}}]], week_num_space, week))
+    tex.print(string.format([[{\hbox to %.5fin{\hfil %s %d\hfil}}]], week_num_space, week_num_size, week))
   end
   tex.print([[\par\vskip2pt\noindent]])
   
@@ -126,21 +146,21 @@ function draw_grid()
     -- Center year vertically relative to box height
     if year_count then
       if year_one_line then
-        tex.print(string.format([[{\vbox to %.5fin{\vfil\hbox to %.5fin{\hfil\Large %d: %d\hfil}\vfil}}]],
-          box_height, year_margin, start + year, year))
+        tex.print(string.format([[{\vbox to %.5fin{\vfil\hbox to %.5fin{\hfil%s %d: %d\hfil}\vfil}}]],
+          box_height, year_margin, year_size, start + year, year))
       else
-        tex.print(string.format([[{\vbox to %.5fin{\vfil\vbox{\Large \hbox to %.5fin{\hfil %d\hfil}\hbox to %.5fin{\hfil %d\hfil}}\vfil}}]],
-          box_height, year_margin, start + year, year_margin, year))
+        tex.print(string.format([[{\vbox to %.5fin{\vfil\vbox{%s \hbox to %.5fin{\hfil %d\hfil}\hbox to %.5fin{\hfil %d\hfil}}\vfil}}]],
+          box_height, year_size, year_margin, start + year, year_margin, year))
       end
     else
-      tex.print(string.format([[{\vbox to %.5fin{\vfil\hbox to %.5fin{\hfil\Large %d\hfil}\vfil}}]],
-        box_height, year_margin, start + year))
+      tex.print(string.format([[{\vbox to %.5fin{\vfil\hbox to %.5fin{\hfil%s %d\hfil}\vfil}}]],
+        box_height, year_margin, year_size, start + year))
     end
     
     for week = 1, 52 do
       local date_string = ""
       if print_dates then
-        date_string = string.format([[\rlap{\smash{\tiny\scalefont{0.8} %s}}]], getWeekDates(start + year, week))
+        date_string = string.format([[\rlap{\smash{%s %s}}]], date_size, getWeekDates(start + year, week))
       end
       tex.print(string.format([[\fbox{%s\vbox to %.5fin{\vfil\hbox to %.5fin{\hfil}\vfil}}]],
            date_string, box_height, box_width))
@@ -151,6 +171,9 @@ function draw_grid()
       tex.print([[\par\vskip2pt\noindent]])
     end
   end
+
+  -- Print the pdfcrop command for test printing
+  print_crop_command(paper_width, paper_height, 8.5, 11)
 end
 \end{luacode*}
 
