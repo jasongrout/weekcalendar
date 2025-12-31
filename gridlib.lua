@@ -53,7 +53,8 @@ function gridlib.draw_grid(width, height, top_labels, left_labels, options)
     tex.sprint(string.format([[\setbox0=\hbox{%s Xg}]], top_font))
   end)
   local header_height_pt = tex.box[0].height / 65536
-  local header_space = gridlib.pt2in(header_height_pt + 4)
+  -- header_space includes: header height, plus spacing for \par\vskip2pt and depth buffer
+  local header_space = gridlib.pt2in(header_height_pt + 10)
 
   texio.write_nl(string.format('Measured header height: %.1fpt', header_height_pt))
 
@@ -67,12 +68,86 @@ function gridlib.draw_grid(width, height, top_labels, left_labels, options)
   texio.write_nl(string.format('Grid dimensions - WIDTH: %.3fin, HEIGHT: %.3fin', box_width, box_height))
 
   -- Print top labels across the header
-  local header_start = left_margin + box_width/10
-  tex.print(string.format([[\noindent\kern%.5fin]], header_start))
+  -- Each fbox takes exactly: box_width + fbox_overhead (no inter-box gap since they're adjacent)
+  local cell_pitch = box_width + fbox_overhead
+  -- Header starts after left_margin, plus half fbox_overhead to center over the VISIBLE box
+  -- (fbox has border+padding on left side that shifts the visible area right)
+  local header_offset = left_margin + fbox_overhead / 2
+  tex.print(string.format([[\noindent\kern%.5fin]], header_offset))
   for i, label in ipairs(top_labels) do
-    tex.print(string.format([[{\hbox to %.5fin{\hfil %s %s\hfil}}]], header_space_width, top_font, label))
+    tex.print(string.format([[{\hbox to %.5fin{\hfil %s %s\hfil}}]], cell_pitch, top_font, label))
   end
   tex.print([[\par\vskip2pt\noindent]])
+
+  -- Debug: measure actual TeX placement by typesetting and walking the node list
+  -- Store sp2in in a global for the deferred callbacks
+  _G._debug_sp2in = gridlib.sp2in
+
+  -- Helper to walk an hbox and find child box midpoints
+  -- Node type IDs (from node.type()): 0=hlist, 1=vlist, 12=glue, 13=kern
+  local function get_box_midpoints(boxnum)
+    local midpoints = {}
+    local box = tex.getbox(boxnum)
+    if not box then return midpoints end
+    local pos = 0
+    for nd in node.traverse(box.head) do
+      local id = nd.id
+      if id == 0 or id == 1 then -- hlist or vlist
+        local mid = pos + nd.width / 2
+        table.insert(midpoints, _G._debug_sp2in(mid))
+        pos = pos + nd.width
+      elseif id == 13 then -- kern
+        pos = pos + nd.kern
+      elseif id == 12 then -- glue
+        pos = pos + nd.width
+      end
+    end
+    return midpoints
+  end
+
+  -- Store functions globally for deferred execution
+  _G._get_box_midpoints = get_box_midpoints
+  _G._header_mids = {}
+  _G._grid_mids = {}
+  _G._print_alignment_debug = function()
+    local fbox_border = 3.4 / 72  -- fboxrule + fboxsep = 0.4pt + 3pt = 3.4pt per side
+    texio.write_nl("Column alignment (measured from TeX nodes):")
+    texio.write_nl(string.format("  Header row total width: %.4fin", _G._debug_sp2in(tex.getbox(1).width)))
+    texio.write_nl(string.format("  Grid row total width:   %.4fin", _G._debug_sp2in(tex.getbox(2).width)))
+    texio.write_nl(string.format("  fbox border/padding per side: %.4fin (%.1fpt)", fbox_border, fbox_border * 72))
+    texio.write_nl("  Comparing header center to VISIBLE box center:")
+    texio.write_nl("  (header includes fbox_border offset to center over visible box)")
+    for i = 1, math.min(#_G._header_mids, #_G._grid_mids) do
+      -- Header measurement already includes fbox_border kern, visible box is grid_mid + fbox_border
+      local visible_box_mid = _G._grid_mids[i] + fbox_border
+      local diff = _G._header_mids[i] - visible_box_mid
+      texio.write_nl(string.format("  Col %2d: header=%.4fin, visible_box=%.4fin, diff=%.4fin",
+        i, _G._header_mids[i], visible_box_mid, diff))
+    end
+  end
+
+  -- Build and measure header row (with the fbox_overhead/2 offset, just the header boxes)
+  tex.sprint(string.format([[\setbox1=\hbox{\kern%.5fin]], fbox_overhead / 2))
+  for i, label in ipairs(top_labels) do
+    tex.sprint(string.format([[{\hbox to %.5fin{\hfil %s %s\hfil}}]], cell_pitch, top_font, label))
+  end
+  tex.sprint([[}\directlua{_G._header_mids = _G._get_box_midpoints(1)}]])
+
+  -- Build and measure grid row (just the fboxes, not the left label)
+  tex.sprint([[\setbox2=\hbox{]])
+  for col = 1, num_cols do
+    tex.sprint(string.format([[\fbox{\vbox to %.5fin{\vfil\hbox to %.5fin{\hfil}\vfil}}]], box_height, box_width))
+  end
+  tex.sprint([[}\directlua{_G._grid_mids = _G._get_box_midpoints(2)}]])
+
+  -- Measure the left label vbox width
+  tex.sprint(string.format([[\setbox3=\hbox{\vbox to %.5fin{\vfil\hbox to %.5fin{\hfil}\vfil}}]], box_height, left_margin))
+
+  -- Measure the header kern width
+  tex.sprint(string.format([[\setbox4=\hbox{\kern%.5fin}]], left_margin))
+
+  -- Print debug output after measurements
+  tex.sprint([[\directlua{_G._print_alignment_debug()}]])
 
   -- Main grid
   for row = 1, num_rows do
@@ -111,11 +186,18 @@ function gridlib.number_range(start, count)
   return labels
 end
 
--- Month name abbreviations
+-- Month names
 gridlib.month_names = {
+  "January", "February", "March", "April", "May", "June",
+  "July", "August", "September", "October", "November", "December"
+}
+
+-- Month name abbreviations
+gridlib.month_names_short = {
   "Jan", "Feb", "Mar", "Apr", "May", "Jun",
   "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
 }
+
 
 -- Print pdfcrop command for extracting a test section from the PDF
 -- Parameters:

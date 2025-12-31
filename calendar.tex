@@ -1,10 +1,33 @@
 \documentclass{article}
 
-\usepackage[paperwidth=60in, paperheight=36in, margin=1in,
+\usepackage{luacode}
+
+% Configuration - all settings in one place
+\begin{luacode*}
+cfg = {
+  paper_width = 60,        -- inches
+  paper_height = 36,       -- inches
+  margin = .8,              -- inches
+  print_dates = true,      -- should dates be printed in every square?
+  year_one_line = true,   -- should the year in the left column be on one line?
+  year_count = false,      -- print year count after year?
+  start = 2026,            -- year of first row
+  years = 30,              -- how many years
+  -- Font sizes: \tiny \scriptsize \footnotesize \small \normalsize
+  -- \large \Large \LARGE \huge \Huge
+  week_num_size = [[\Huge]],      -- week numbers across the top
+  year_size = [[\Huge]],          -- year numbers in left column
+  date_size = [[\footnotesize]],   -- dates in each box
+}
+\end{luacode*}
+
+\usepackage[
+  paperwidth=\directlua{tex.print(cfg.paper_width)}in,
+  paperheight=\directlua{tex.print(cfg.paper_height)}in,
+  margin=\directlua{tex.print(cfg.margin)}in,
 % Use showframe to show the margin space
 % showframe
 ]{geometry}
-\usepackage{luacode}
 
 \usepackage{scalefnt}
 \usepackage{graphicx}
@@ -23,22 +46,24 @@ function getWeekDates(year, week)
         return nil, nil, "Invalid week number"
     end
 
-    -- Get January 1st of the year
-    local jan1 = os.time({year=year, month=1, day=1})
+    -- ISO 8601: Week 1 is the week containing the first Thursday of the year
+    -- (equivalently, the week containing January 4th)
+    -- Get January 4th of the year (always in week 1)
+    local jan4 = os.time({year=year, month=1, day=4})
 
-    -- Get the day of week (1-7, where 1 is Sunday)
-    local jan1_wday = os.date("*t", jan1).wday
+    -- Get the day of week for Jan 4 (1=Sunday, 2=Monday, ..., 7=Saturday)
+    local jan4_wday = os.date("*t", jan4).wday
 
-    -- Calculate days to first Monday of year
-    local days_to_monday = 0
-    if jan1_wday <= 4 then
-        days_to_monday = -(jan1_wday - 2)  -- 2 is Monday
-    else
-        days_to_monday = (9 - jan1_wday)
-    end
+    -- Calculate the Monday of week 1 (the Monday on or before Jan 4)
+    -- Convert to Mon=1..Sun=7 system: Mon=2->1, Tue=3->2, ..., Sun=1->7
+    local jan4_weekday = (jan4_wday == 1) and 7 or (jan4_wday - 1)
+    local days_to_monday = jan4_weekday - 1  -- days from Monday to Jan 4
+
+    -- Monday of week 1
+    local week1_monday = jan4 - (days_to_monday * 24 * 60 * 60)
 
     -- Calculate start of requested week
-    local week_start = jan1 + ((days_to_monday + (week - 1) * 7) * 24 * 60 * 60)
+    local week_start = week1_monday + ((week - 1) * 7 * 24 * 60 * 60)
     local week_end = week_start + (6 * 24 * 60 * 60)
 
     -- Get detailed date info for start and end
@@ -49,39 +74,24 @@ function getWeekDates(year, week)
     local formatted_date
     if start_date.month == end_date.month then
         formatted_date = string.format("%s %d-%d",
-            gridlib.month_names[start_date.month],
+            gridlib.month_names_short[start_date.month],
             start_date.day,
             end_date.day)
     else
         formatted_date = string.format("%s %d-%s %d",
-            gridlib.month_names[start_date.month],
+            gridlib.month_names_short[start_date.month],
             start_date.day,
-            gridlib.month_names[end_date.month],
+            gridlib.month_names_short[end_date.month],
             end_date.day)
     end
 
     return formatted_date
 end
 
-
--- Configuration (set these values)
-cfg = {
-  print_dates = true,      -- should dates be printed in every square?
-  year_one_line = false,   -- should the year in the left column be on one line?
-  year_count = false,      -- print year count after year?
-  start = 2026,            -- year of first row
-  years = 30,              -- how many years
-  -- Font sizes: \tiny \scriptsize \footnotesize \small \normalsize
-  -- \large \Large \LARGE \huge \Huge
-  week_num_size = [[\LARGE]],      -- week numbers across the top
-  year_size = [[\LARGE]],          -- year numbers in left column
-  date_size = [[\footnotesize]],   -- dates in each box
-}
-
 function draw_grid()
   local c = cfg -- shorthand
 
-  local year_margin = 0.5
+  local year_margin = 1.0
   if c.year_one_line then
     year_margin = 0.8
   end

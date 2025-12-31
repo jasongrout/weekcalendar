@@ -1,10 +1,25 @@
 \documentclass{article}
 
-\usepackage[paperwidth=36in, paperheight=24in, margin=1in,
+\usepackage{luacode}
+
+% Configuration - all settings in one place
+\begin{luacode*}
+cfg = {
+  paper_width = 36,        -- inches
+  paper_height = 24,       -- inches
+  margin = 0.8,              -- inches
+  start_year = 2004,       -- first year column
+  num_years = 22,          -- how many years (columns)
+}
+\end{luacode*}
+
+\usepackage[
+  paperwidth=\directlua{tex.print(cfg.paper_width)}in,
+  paperheight=\directlua{tex.print(cfg.paper_height)}in,
+  margin=\directlua{tex.print(cfg.margin)}in,
 % Use showframe to show the margin space
 % showframe
 ]{geometry}
-\usepackage{luacode}
 
 \usepackage{scalefnt}
 \usepackage{graphicx}
@@ -17,15 +32,9 @@
 \begin{luacode*}
 local gridlib = require("gridlib")
 
--- Configuration
-cfg = {
-  start_year = 2004,       -- first year column
-  num_years = 22,          -- how many years (columns)
-}
-
 -- Generate labels
 local top_labels = gridlib.number_range(cfg.start_year, cfg.num_years)
-local left_labels = gridlib.month_names
+local left_labels = gridlib.month_names_short
 
 -- Get grid dimensions from TeX (set by geometry package)
 local paper_width, paper_height, grid_width, grid_height = gridlib.get_page_dimensions()
