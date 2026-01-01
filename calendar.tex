@@ -9,7 +9,7 @@ cfg = {
   paper_height = 36,       -- inches
   margin = .8,             -- inches
   print_dates = true,      -- should dates be printed in every square?
-  start = 2026,            -- year of first row
+  start = 2025,            -- year of first row
   years = 25,              -- how many years
 
   -- Font sizes: \tiny \scriptsize \footnotesize \small \normalsize
@@ -111,6 +111,8 @@ function draw_grid()
     gap = c.gap,
     line_width = c.line_width,
     cell_content = cell_content,
+    row_separator_interval = 5,
+    row_separator_start = 5,  -- separator above 2030, 2035, 2040, ...
   })
 
   -- Print the pdfcrop command for test printing

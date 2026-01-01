@@ -16,6 +16,10 @@ local function parse_grid_options(options)
     line_width = options.line_width or 1.2,
     cell_content = options.cell_content,
     divider_style = options.divider_style,  -- default set below after line_width is known
+    -- Row separator options
+    row_separator_interval = options.row_separator_interval or 0,  -- 0 means disabled
+    row_separator_start = options.row_separator_start or 1,  -- which row to start counting from
+    row_separator_width = options.row_separator_width,  -- defaults to line_width if nil
   }
 end
 
@@ -26,6 +30,29 @@ local function draw_row_labels(left_labels, left_margin, cell_height, gap, box_a
     local y = box_area_height - (row - 1) * (cell_height + gap) - cell_height / 2
     tex.print(string.format([=[\node[font=%s] at (%.4f, %.4f) {%s};]=],
       font, x, y, left_labels[row]))
+  end
+end
+
+-- Internal helper: draw horizontal separator lines between row groups
+-- Draws a line in the gap after every `interval` rows, starting from `start_row`
+local function draw_row_separators(opts, num_rows, cell_height, left_margin, row_width, box_area_height)
+  if opts.row_separator_interval <= 0 then
+    return
+  end
+
+  local sep_width = opts.row_separator_width or opts.line_width
+  local interval = opts.row_separator_interval
+  local start_row = opts.row_separator_start
+
+  -- Draw separator after rows: start_row, start_row + interval, start_row + 2*interval, ...
+  -- The separator is drawn in the gap between row N and row N+1
+  for row = start_row, num_rows - 1, interval do
+    -- Y position is in the middle of the gap after this row
+    local row_bottom = box_area_height - row * (cell_height + opts.gap)
+    local sep_y = row_bottom + opts.gap / 2
+
+    tex.print(string.format([=[\draw[line width=%.1fpt, line cap=rect] (%.4f, %.4f) -- (%.4f, %.4f);]=],
+      sep_width, left_margin, sep_y, left_margin + row_width, sep_y))
   end
 end
 
@@ -73,6 +100,9 @@ end
 --     gap: gap between boxes in inches (default: 0.04)
 --     line_width: box border thickness in points (default: 0.4)
 --     cell_content: function(row, col) returning TeX string for cell content (default: nil)
+--     row_separator_interval: draw horizontal line every N rows (0 to disable, default: 0)
+--     row_separator_start: row to start counting from for separators (default: 1)
+--     row_separator_width: line width for separators in points (default: line_width)
 function gridlib.draw_grid(width, height, top_labels, left_labels, options)
   local opts = parse_grid_options(options)
   local num_cols = #top_labels
@@ -118,6 +148,9 @@ function gridlib.draw_grid(width, height, top_labels, left_labels, options)
     end
   end
 
+  -- Draw row separator lines
+  draw_row_separators(opts, num_rows, cell_height, opts.left_margin, box_area_width, box_area_height)
+
   tex.print([=[\end{tikzpicture}]=])
 
   return {
@@ -129,10 +162,14 @@ end
 
 -- Draw a grid using TikZ with each row as a single box with dotted internal dividers
 -- Parameters same as draw_grid, plus:
---   options.divider_style: TikZ style for internal dividers (default: "dotted, line width=0.4pt")
+--   options.divider_style: TikZ style for internal dividers (default: "dashed, line width=<line_width>pt")
+-- Row separator options (same as draw_grid):
+--   options.row_separator_interval: draw horizontal line every N rows (0 to disable, default: 0)
+--   options.row_separator_start: row to start counting from for separators (default: 1)
+--   options.row_separator_width: line width for separators in points (default: line_width)
 function gridlib.draw_grid_rowbox(width, height, top_labels, left_labels, options)
   local opts = parse_grid_options(options)
-  local divider_style = opts.divider_style or "dashed"
+  local divider_style = opts.divider_style or "dotted"
   if not divider_style:find("line width") then
     divider_style = string.format("%s, line width=%.1fpt", divider_style, opts.line_width)
   end
@@ -191,6 +228,9 @@ function gridlib.draw_grid_rowbox(width, height, top_labels, left_labels, option
       end
     end
   end
+
+  -- Draw row separator lines
+  draw_row_separators(opts, num_rows, cell_height, opts.left_margin, row_width, box_area_height)
 
   tex.print([=[\end{tikzpicture}]=])
 

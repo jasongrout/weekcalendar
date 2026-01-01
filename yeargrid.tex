@@ -9,7 +9,7 @@ cfg = {
   paper_height = 36,       -- inches (swapped from yeargrid)
   margin = 0.8,            -- inches
   start_year = 2004,       -- first year row
-  num_years = 22,          -- how many years (rows)
+  num_years = 21,          -- how many years (rows)
 }
 \end{luacode*}
 
@@ -34,7 +34,7 @@ cfg = {
 local gridlib = require("gridlib")
 
 -- Generate labels (months on top, years on left)
-local top_labels = gridlib.month_names
+local top_labels = gridlib.month_names_short
 local left_labels = gridlib.number_range(cfg.start_year, cfg.num_years)
 
 -- Get grid dimensions from TeX (set by geometry package)
@@ -45,12 +45,8 @@ grid_height = grid_height - 0.05
 
 -- Draw the grid using TikZ
 gridlib.draw_grid_rowbox(grid_width, grid_height, top_labels, left_labels, {
-  top_font_size = [[\Huge]],
-  left_font_size = [[\Huge]],
-  left_margin = cfg.left_margin,
-  header_height = cfg.header_height,
-  gap = cfg.gap,
-  line_width = cfg.line_width,
+  row_separator_interval = 5,
+  row_separator_start = 1,  -- separator above 2005, 2010, 2015, ...
 })
 
 -- Print the pdfcrop command for test printing
