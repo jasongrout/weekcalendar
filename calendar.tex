@@ -7,12 +7,15 @@
 cfg = {
   paper_width = 60,        -- inches
   paper_height = 36,       -- inches
-  margin = .8,              -- inches
+  margin = .8,             -- inches
   print_dates = true,      -- should dates be printed in every square?
-  year_one_line = true,   -- should the year in the left column be on one line?
+  year_one_line = true,    -- should the year in the left column be on one line?
   year_count = false,      -- print year count after year?
   start = 2026,            -- year of first row
-  years = 30,              -- how many years
+  years = 25,              -- how many years
+  -- TikZ-specific options
+  gap = 0.04,              -- gap between boxes in inches
+  header_height = 0.4,     -- space for week number labels in inches
   -- Font sizes: \tiny \scriptsize \footnotesize \small \normalsize
   -- \large \Large \LARGE \huge \Huge
   week_num_size = [[\Huge]],      -- week numbers across the top
@@ -29,8 +32,7 @@ cfg = {
 % showframe
 ]{geometry}
 
-\usepackage{scalefnt}
-\usepackage{graphicx}
+\usepackage{tikz}
 
 \setlength{\parindent}{0pt}
 
@@ -98,7 +100,7 @@ function draw_grid()
 
   -- Generate labels
   local top_labels = gridlib.number_range(1, 52)
-  local left_labels = gridlib.number_range(c.start, c.years + 1)
+  local left_labels = gridlib.number_range(c.start, c.years)
 
   -- Custom left label function for year_count mode
   local function make_left_label(row)
@@ -118,7 +120,7 @@ function draw_grid()
   -- Rebuild left_labels with custom formatting if needed
   if c.year_count and not c.year_one_line then
     left_labels = {}
-    for i = 0, c.years do
+    for i = 0, c.years - 1 do
       left_labels[#left_labels + 1] = make_left_label(i + 1)
     end
   end
@@ -127,7 +129,7 @@ function draw_grid()
   local function cell_content(row, col)
     if c.print_dates then
       local year = c.start + row - 1
-      return string.format([[\rlap{\smash{%s %s}}]], c.date_size, getWeekDates(year, col))
+      return string.format([[{%s %s}]], c.date_size, getWeekDates(year, col))
     end
     return ""
   end
@@ -139,6 +141,9 @@ function draw_grid()
     top_font_size = c.week_num_size,
     left_font_size = c.year_size,
     left_margin = year_margin,
+    header_height = c.header_height,
+    gap = c.gap,
+    line_width = c.line_width,
     cell_content = cell_content,
   })
 

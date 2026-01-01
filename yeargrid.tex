@@ -5,11 +5,14 @@
 % Configuration - all settings in one place
 \begin{luacode*}
 cfg = {
-  paper_width = 36,        -- inches
-  paper_height = 24,       -- inches
-  margin = 0.8,              -- inches
-  start_year = 2004,       -- first year column
-  num_years = 22,          -- how many years (columns)
+  paper_width = 24,        -- inches (swapped from yeargrid)
+  paper_height = 36,       -- inches (swapped from yeargrid)
+  margin = 0.8,            -- inches
+  start_year = 2004,       -- first year row
+  num_years = 22,          -- how many years (rows)
+  gap = 0.04,              -- gap between boxes in inches
+  left_margin = 1.0,       -- space for year labels in inches
+  header_height = 0.4,     -- space for month labels in inches
 }
 \end{luacode*}
 
@@ -21,29 +24,33 @@ cfg = {
 % showframe
 ]{geometry}
 
-\usepackage{scalefnt}
-\usepackage{graphicx}
+\usepackage{tikz}
 
 \setlength{\parindent}{0pt}
 
 \begin{document}
 \thispagestyle{empty}
-
 \begin{luacode*}
 local gridlib = require("gridlib")
 
--- Generate labels
-local top_labels = gridlib.number_range(cfg.start_year, cfg.num_years)
-local left_labels = gridlib.month_names_short
+-- Generate labels (months on top, years on left)
+local top_labels = gridlib.month_names
+local left_labels = gridlib.number_range(cfg.start_year, cfg.num_years)
 
 -- Get grid dimensions from TeX (set by geometry package)
 local paper_width, paper_height, grid_width, grid_height = gridlib.get_page_dimensions()
 
--- Draw the grid
+-- Reduce height slightly to prevent overflow to second page
+grid_height = grid_height - 0.01
+
+-- Draw the grid using TikZ
 gridlib.draw_grid(grid_width, grid_height, top_labels, left_labels, {
-  top_font_size = [[\LARGE]],
-  left_font_size = [[\LARGE]],
-  left_margin = 0.6,
+  top_font_size = [[\Huge]],
+  left_font_size = [[\Huge]],
+  left_margin = cfg.left_margin,
+  header_height = cfg.header_height,
+  gap = cfg.gap,
+  line_width = cfg.line_width,
 })
 
 -- Print the pdfcrop command for test printing

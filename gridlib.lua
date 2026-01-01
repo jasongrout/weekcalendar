@@ -22,158 +22,85 @@ function gridlib.get_page_dimensions()
   return paper_width, paper_height, text_width, text_height
 end
 
--- Draw a grid with labels along the top and left side
+-- Draw a grid using TikZ with labels along the top and left side
 -- Parameters:
---   width: total width of grid area in inches (excluding left_margin)
---   height: total height of grid area in inches (excluding header)
+--   width: total width of grid area in inches
+--   height: total height of grid area in inches
 --   top_labels: array of strings for column headers
 --   left_labels: array of strings for row headers
 --   options: table with optional settings:
---     top_font_size: TeX font size command (default: [[\LARGE]])
---     left_font_size: TeX font size command (default: [[\LARGE]])
---     left_margin: width in inches for left label column (default: 0.6)
+--     top_font_size: TeX font size command (default: \Huge)
+--     left_font_size: TeX font size command (default: \Huge)
+--     left_margin: width in inches for left label column (default: 1.0)
+--     header_height: height in inches for top label row (default: 0.5)
+--     gap: gap between boxes in inches (default: 0.04)
+--     line_width: box border thickness in points (default: 0.2, matches \fboxrule)
 --     cell_content: function(row, col) returning TeX string for cell content (default: nil)
 function gridlib.draw_grid(width, height, top_labels, left_labels, options)
   options = options or {}
-  local top_font = options.top_font_size or [[\LARGE]]
-  local left_font = options.left_font_size or [[\LARGE]]
-  local left_margin = options.left_margin or 0.6
+  local top_font = options.top_font_size or [[\Huge]]
+  local left_font = options.left_font_size or [[\Huge]]
+  local left_margin = options.left_margin or 1.0
+  local header_height = options.header_height or 0.5
+  local gap = options.gap or 0.04
+  local line_width = options.line_width or 0.4
   local cell_content = options.cell_content
 
   local num_cols = #top_labels
   local num_rows = #left_labels
 
-  -- Calculate box width
-  -- The 10pt accounts for \fbox borders/padding plus inter-box spacing
-  local box_width = (width - left_margin)/num_cols - gridlib.pt2in(10.0)
-  local header_space_width = box_width + gridlib.pt2in(6.8)
+  -- Calculate cell dimensions
+  local box_area_width = width - left_margin
+  local box_area_height = height - header_height
 
-  -- Measure actual header height by running TeX locally and reading the box
-  tex.runtoks(function()
-    tex.sprint(string.format([[\setbox0=\hbox{%s Xg}]], top_font))
-  end)
-  local header_height_pt = tex.box[0].height / 65536
-  -- header_space includes: header height, plus spacing for \par\vskip2pt and depth buffer
-  local header_space = gridlib.pt2in(header_height_pt + 10)
+  local cell_width = (box_area_width - (num_cols - 1) * gap) / num_cols
+  local cell_height = (box_area_height - (num_rows - 1) * gap) / num_rows
 
-  texio.write_nl(string.format('Measured header height: %.1fpt', header_height_pt))
+  texio.write_nl(string.format('TikZ grid - Total: %.3fin x %.3fin, Cell: %.3fin x %.3fin', width, height, cell_width, cell_height))
 
-  -- Calculate box_height so vertical gap equals horizontal gap
-  local fbox_overhead = gridlib.pt2in(6.8) -- 2*(fboxrule + fboxsep) = 2*(0.4pt + 3pt)
-  local visible_gap = gridlib.pt2in(3.2) -- small gap to match horizontal inter-box spacing
-  local available = height - header_space
-  -- Total = num_rows * (box_height + fbox_overhead) + (num_rows - 1) * visible_gap
-  local box_height = (available - num_rows * fbox_overhead - (num_rows - 1) * visible_gap) / num_rows
+  -- Start TikZ picture
+  tex.print([=[\noindent\begin{tikzpicture}[x=1in, y=1in]]=])
 
-  texio.write_nl(string.format('Grid dimensions - WIDTH: %.3fin, HEIGHT: %.3fin', box_width, box_height))
-
-  -- Print top labels across the header
-  -- Each fbox takes exactly: box_width + fbox_overhead (no inter-box gap since they're adjacent)
-  local cell_pitch = box_width + fbox_overhead
-  -- Header starts after left_margin, plus half fbox_overhead to center over the VISIBLE box
-  -- (fbox has border+padding on left side that shifts the visible area right)
-  local header_offset = left_margin + fbox_overhead / 2
-  tex.print(string.format([[\noindent\kern%.5fin]], header_offset))
-  for i, label in ipairs(top_labels) do
-    tex.print(string.format([[{\hbox to %.5fin{\hfil %s %s\hfil}}]], cell_pitch, top_font, label))
-  end
-  tex.print([[\par\vskip2pt\noindent]])
-
-  -- Debug: measure actual TeX placement by typesetting and walking the node list
-  -- Store sp2in in a global for the deferred callbacks
-  _G._debug_sp2in = gridlib.sp2in
-
-  -- Helper to walk an hbox and find child box midpoints
-  -- Node type IDs (from node.type()): 0=hlist, 1=vlist, 12=glue, 13=kern
-  local function get_box_midpoints(boxnum)
-    local midpoints = {}
-    local box = tex.getbox(boxnum)
-    if not box then return midpoints end
-    local pos = 0
-    for nd in node.traverse(box.head) do
-      local id = nd.id
-      if id == 0 or id == 1 then -- hlist or vlist
-        local mid = pos + nd.width / 2
-        table.insert(midpoints, _G._debug_sp2in(mid))
-        pos = pos + nd.width
-      elseif id == 13 then -- kern
-        pos = pos + nd.kern
-      elseif id == 12 then -- glue
-        pos = pos + nd.width
-      end
-    end
-    return midpoints
-  end
-
-  -- Store functions globally for deferred execution
-  _G._get_box_midpoints = get_box_midpoints
-  _G._header_mids = {}
-  _G._grid_mids = {}
-  _G._print_alignment_debug = function()
-    local fbox_border = 3.4 / 72  -- fboxrule + fboxsep = 0.4pt + 3pt = 3.4pt per side
-    texio.write_nl("Column alignment (measured from TeX nodes):")
-    texio.write_nl(string.format("  Header row total width: %.4fin", _G._debug_sp2in(tex.getbox(1).width)))
-    texio.write_nl(string.format("  Grid row total width:   %.4fin", _G._debug_sp2in(tex.getbox(2).width)))
-    texio.write_nl(string.format("  fbox border/padding per side: %.4fin (%.1fpt)", fbox_border, fbox_border * 72))
-    texio.write_nl("  Comparing header center to VISIBLE box center:")
-    texio.write_nl("  (header includes fbox_border offset to center over visible box)")
-    for i = 1, math.min(#_G._header_mids, #_G._grid_mids) do
-      -- Header measurement already includes fbox_border kern, visible box is grid_mid + fbox_border
-      local visible_box_mid = _G._grid_mids[i] + fbox_border
-      local diff = _G._header_mids[i] - visible_box_mid
-      texio.write_nl(string.format("  Col %2d: header=%.4fin, visible_box=%.4fin, diff=%.4fin",
-        i, _G._header_mids[i], visible_box_mid, diff))
-    end
-  end
-
-  -- Build and measure header row (with the fbox_overhead/2 offset, just the header boxes)
-  tex.sprint(string.format([[\setbox1=\hbox{\kern%.5fin]], fbox_overhead / 2))
-  for i, label in ipairs(top_labels) do
-    tex.sprint(string.format([[{\hbox to %.5fin{\hfil %s %s\hfil}}]], cell_pitch, top_font, label))
-  end
-  tex.sprint([[}\directlua{_G._header_mids = _G._get_box_midpoints(1)}]])
-
-  -- Build and measure grid row (just the fboxes, not the left label)
-  tex.sprint([[\setbox2=\hbox{]])
+  -- Draw column labels (top)
   for col = 1, num_cols do
-    tex.sprint(string.format([[\fbox{\vbox to %.5fin{\vfil\hbox to %.5fin{\hfil}\vfil}}]], box_height, box_width))
+    local x = left_margin + (col - 1) * (cell_width + gap) + cell_width / 2
+    local y = height - header_height / 2
+    tex.print(string.format([=[\node[font=%s] at (%.4f, %.4f) {%s};]=],
+      top_font, x, y, top_labels[col]))
   end
-  tex.sprint([[}\directlua{_G._grid_mids = _G._get_box_midpoints(2)}]])
 
-  -- Measure the left label vbox width
-  tex.sprint(string.format([[\setbox3=\hbox{\vbox to %.5fin{\vfil\hbox to %.5fin{\hfil}\vfil}}]], box_height, left_margin))
-
-  -- Measure the header kern width
-  tex.sprint(string.format([[\setbox4=\hbox{\kern%.5fin}]], left_margin))
-
-  -- Print debug output after measurements
-  tex.sprint([[\directlua{_G._print_alignment_debug()}]])
-
-  -- Main grid
+  -- Draw row labels (left)
   for row = 1, num_rows do
-    -- Left label, centered vertically
-    tex.print(string.format([[{\vbox to %.5fin{\vfil\hbox to %.5fin{\hfil%s %s\hfil}\vfil}}]],
-      box_height, left_margin, left_font, left_labels[row]))
+    local x = left_margin / 2
+    local y = box_area_height - (row - 1) * (cell_height + gap) - cell_height / 2
+    tex.print(string.format([=[\node[font=%s] at (%.4f, %.4f) {%s};]=],
+      left_font, x, y, left_labels[row]))
+  end
 
-    -- Boxes for each column
+  -- Draw grid of boxes
+  for row = 1, num_rows do
     for col = 1, num_cols do
-      local content = ""
-      if cell_content then
-        content = cell_content(row, col) or ""
-      end
-      tex.print(string.format([[\fbox{%s\vbox to %.5fin{\vfil\hbox to %.5fin{\hfil}\vfil}}]],
-           content, box_height, box_width))
-    end
+      local x = left_margin + (col - 1) * (cell_width + gap)
+      local y = box_area_height - (row - 1) * (cell_height + gap) - cell_height
+      tex.print(string.format([=[\draw[line width=%.1fpt] (%.4f, %.4f) rectangle (%.4f, %.4f);]=],
+        line_width, x, y, x + cell_width, y + cell_height))
 
-    -- Space between each row
-    if row < num_rows then
-      tex.print(string.format([[\par\nointerlineskip\vskip%.5fin\noindent]], visible_gap))
+      -- Draw cell content if provided (bottom-left aligned)
+      if cell_content then
+        local content = cell_content(row, col)
+        if content and content ~= "" then
+          tex.print(string.format([=[\node[anchor=south west, inner sep=2pt] at (%.4f, %.4f) {%s};]=],
+            x, y, content))
+        end
+      end
     end
   end
+
+  tex.print([=[\end{tikzpicture}]=])
 
   return {
-    box_width = box_width,
-    box_height = box_height
+    cell_width = cell_width,
+    cell_height = cell_height
   }
 end
 
