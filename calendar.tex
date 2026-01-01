@@ -14,7 +14,7 @@ cfg = {
 
   -- Font sizes: \tiny \scriptsize \footnotesize \small \normalsize
   -- \large \Large \LARGE \huge \Huge
-  date_size = [[\footnotesize\bfseries]],   -- dates in each box
+  date_size = [[\normalsize\bfseries]],   -- dates in each box
 }
 \end{luacode*}
 
@@ -69,17 +69,21 @@ function getWeekDates(year, week)
     -- Format the output string
     local formatted_date
     if start_date.month == end_date.month then
-        formatted_date = string.format("%s %d-%d",
+        formatted_date = string.format("%s %d--%d",
             gridlib.month_names_short[start_date.month],
             start_date.day,
             end_date.day)
     else
-        formatted_date = string.format("%s %d-%s %d",
+        formatted_date = string.format("%s %d--%s %d",
             gridlib.month_names_short[start_date.month],
             start_date.day,
             gridlib.month_names_short[end_date.month],
             end_date.day)
     end
+
+    formatted_date = string.format("%s %d",
+      gridlib.month_names_short[start_date.month],
+      start_date.day)
 
     return formatted_date
 end
