@@ -10,9 +10,6 @@ cfg = {
   margin = 0.8,            -- inches
   start_year = 2004,       -- first year row
   num_years = 22,          -- how many years (rows)
-  gap = 0.04,              -- gap between boxes in inches
-  left_margin = 1.0,       -- space for year labels in inches
-  header_height = 0.4,     -- space for month labels in inches
 }
 \end{luacode*}
 
@@ -27,8 +24,11 @@ cfg = {
 \usepackage{tikz}
 
 \setlength{\parindent}{0pt}
+\setlength{\parskip}{0pt}
+\setlength{\topskip}{0pt}
 
 \begin{document}
+\vspace*{0pt}
 \thispagestyle{empty}
 \begin{luacode*}
 local gridlib = require("gridlib")
@@ -41,10 +41,10 @@ local left_labels = gridlib.number_range(cfg.start_year, cfg.num_years)
 local paper_width, paper_height, grid_width, grid_height = gridlib.get_page_dimensions()
 
 -- Reduce height slightly to prevent overflow to second page
-grid_height = grid_height - 0.01
+grid_height = grid_height - 0.05
 
 -- Draw the grid using TikZ
-gridlib.draw_grid(grid_width, grid_height, top_labels, left_labels, {
+gridlib.draw_grid_rowbox(grid_width, grid_height, top_labels, left_labels, {
   top_font_size = [[\Huge]],
   left_font_size = [[\Huge]],
   left_margin = cfg.left_margin,

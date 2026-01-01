@@ -9,18 +9,12 @@ cfg = {
   paper_height = 36,       -- inches
   margin = .8,             -- inches
   print_dates = true,      -- should dates be printed in every square?
-  year_one_line = true,    -- should the year in the left column be on one line?
-  year_count = false,      -- print year count after year?
   start = 2026,            -- year of first row
   years = 25,              -- how many years
-  -- TikZ-specific options
-  gap = 0.04,              -- gap between boxes in inches
-  header_height = 0.4,     -- space for week number labels in inches
+
   -- Font sizes: \tiny \scriptsize \footnotesize \small \normalsize
   -- \large \Large \LARGE \huge \Huge
-  week_num_size = [[\Huge]],      -- week numbers across the top
-  year_size = [[\Huge]],          -- year numbers in left column
-  date_size = [[\footnotesize]],   -- dates in each box
+  date_size = [[\footnotesize\bfseries]],   -- dates in each box
 }
 \end{luacode*}
 
@@ -93,37 +87,9 @@ end
 function draw_grid()
   local c = cfg -- shorthand
 
-  local year_margin = 1.0
-  if c.year_one_line then
-    year_margin = 0.8
-  end
-
   -- Generate labels
   local top_labels = gridlib.number_range(1, 52)
   local left_labels = gridlib.number_range(c.start, c.years)
-
-  -- Custom left label function for year_count mode
-  local function make_left_label(row)
-    local year = c.start + row - 1
-    if c.year_count then
-      if c.year_one_line then
-        return string.format("%d: %d", year, row - 1)
-      else
-        return string.format("\\vbox{%s \\hbox to %.5fin{\\hfil %d\\hfil}\\hbox to %.5fin{\\hfil %d\\hfil}}",
-          c.year_size, year_margin, year, year_margin, row - 1)
-      end
-    else
-      return tostring(year)
-    end
-  end
-
-  -- Rebuild left_labels with custom formatting if needed
-  if c.year_count and not c.year_one_line then
-    left_labels = {}
-    for i = 0, c.years - 1 do
-      left_labels[#left_labels + 1] = make_left_label(i + 1)
-    end
-  end
 
   -- Cell content function for dates
   local function cell_content(row, col)
@@ -137,10 +103,10 @@ function draw_grid()
   -- Get grid dimensions from TeX (set by geometry package)
   local paper_width, paper_height, grid_width, grid_height = gridlib.get_page_dimensions()
 
-  gridlib.draw_grid(grid_width, grid_height, top_labels, left_labels, {
+  gridlib.draw_grid_rowbox(grid_width, grid_height, top_labels, left_labels, {
     top_font_size = c.week_num_size,
     left_font_size = c.year_size,
-    left_margin = year_margin,
+    left_margin = c.left_margin,
     header_height = c.header_height,
     gap = c.gap,
     line_width = c.line_width,
