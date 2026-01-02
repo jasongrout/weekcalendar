@@ -14,7 +14,7 @@ cfg = {
 
   -- Font sizes: \tiny \scriptsize \footnotesize \small \normalsize
   -- \large \Large \LARGE \huge \Huge
-  date_size = [[\normalsize\bfseries]],   -- dates in each box
+  date_size = [[\small\bfseries]],   -- dates in each box
 }
 \end{luacode*}
 
@@ -81,9 +81,9 @@ function getWeekDates(year, week)
             end_date.day)
     end
 
-    formatted_date = string.format("%s %d",
-      gridlib.month_names_short[start_date.month],
-      start_date.day)
+    -- formatted_date = string.format("%s %d",
+    --   gridlib.month_names_short[start_date.month],
+    --   start_date.day)
 
     return formatted_date
 end
