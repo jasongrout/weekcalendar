@@ -1,6 +1,6 @@
-# Week Calendar
+# Calendar
 
-Print a large calendar of each ISO 8601 week (or month) for a number of years.
+Print a large calendar of each month or ISO 8601 week for a number of years.
 Sometimes this sort of thing is called a Memento Mori calendar or life calendar.
 I wanted a calendar with boxes big enough to write in.
 
