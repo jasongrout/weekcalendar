@@ -21,12 +21,12 @@ the calendar every few years.
 
 
 ```
-lualatex calendar.tex
+lualatex weekcalendar.tex
 ```
 
 ### Configuration
 
-Edit the `cfg` table at the top of `calendar.tex`:
+Edit the `cfg` table at the top of `weekcalendar.tex`:
 
 ```lua
 cfg = {
@@ -40,17 +40,17 @@ cfg = {
 }
 ```
 
-## Year Grid
+## Month Calendar
 
 Generate a simpler grid with one row per year and 12 columns for months.
 
 ```
-lualatex yeargrid.tex
+lualatex monthcalendar.tex
 ```
 
 ### Configuration
 
-Edit the `cfg` table at the top of `yeargrid.tex`:
+Edit the `cfg` table at the top of `monthcalendar.tex`:
 
 ```lua
 cfg = {

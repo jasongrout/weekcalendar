@@ -5,8 +5,8 @@
 % Configuration - all settings in one place
 \begin{luacode*}
 cfg = {
-  paper_width = 24,        -- inches (swapped from yeargrid)
-  paper_height = 36,       -- inches (swapped from yeargrid)
+  paper_width = 24,        -- inches
+  paper_height = 36,       -- inches
   margin = 0.8,            -- inches
   start_year = 2004,       -- first year row
   num_years = 21,          -- how many years (rows)
@@ -50,7 +50,7 @@ gridlib.draw_grid_rowbox(grid_width, grid_height, top_labels, left_labels, {
 })
 
 -- Print the pdfcrop command for test printing
-gridlib.print_crop_command("yeargrid.pdf", paper_width, paper_height)
+gridlib.print_crop_command("monthcalendar.pdf", paper_width, paper_height)
 \end{luacode*}
 
 \end{document}
