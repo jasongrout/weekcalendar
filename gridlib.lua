@@ -8,8 +8,7 @@ local function parse_grid_options(options)
   return {
     -- Font sizes: \tiny \scriptsize \footnotesize \small \normalsize
     -- \large \Large \LARGE \huge \Huge
-    top_font = options.top_font_size or [[\Huge\bfseries]],
-    left_font = options.left_font_size or [[\Huge\bfseries]],
+    label_font = options.label_font or [[\Huge\bfseries]],
     left_margin = options.left_margin or 1.0,
     header_height = options.header_height or 0.4,
     gap = options.gap or 0.06,
@@ -93,8 +92,7 @@ end
 --   top_labels: array of strings for column headers
 --   left_labels: array of strings for row headers
 --   options: table with optional settings:
---     top_font_size: TeX font size command (default: \Huge)
---     left_font_size: TeX font size command (default: \Huge)
+--     label_font: TeX font command for row/column labels (default: \Huge\bfseries)
 --     left_margin: width in inches for left label column (default: 1.0)
 --     header_height: height in inches for top label row (default: 0.5)
 --     gap: gap between boxes in inches (default: 0.04)
@@ -121,13 +119,13 @@ function gridlib.draw_grid(width, height, top_labels, left_labels, options)
   tex.print([=[\noindent\begin{tikzpicture}[x=1in, y=1in]]=])
 
   -- Draw column labels (top) - x position accounts for gap between cells
-  draw_column_labels(top_labels, opts.left_margin, cell_width, height, opts.header_height, opts.top_font,
+  draw_column_labels(top_labels, opts.left_margin, cell_width, height, opts.header_height, opts.label_font,
     function(col, left_margin, cw)
       return left_margin + (col - 1) * (cw + opts.gap) + cw / 2
     end)
 
   -- Draw row labels (left)
-  draw_row_labels(left_labels, opts.left_margin, cell_height, opts.gap, box_area_height, opts.left_font)
+  draw_row_labels(left_labels, opts.left_margin, cell_height, opts.gap, box_area_height, opts.label_font)
 
   -- Draw grid of boxes
   for row = 1, num_rows do
@@ -192,13 +190,13 @@ function gridlib.draw_grid_rowbox(width, height, top_labels, left_labels, option
   tex.print([=[\noindent\begin{tikzpicture}[x=1in, y=1in]]=])
 
   -- Draw column labels (top) - x position centered in cell (no gap between cells)
-  draw_column_labels(top_labels, opts.left_margin, cell_width, height, opts.header_height, opts.top_font,
+  draw_column_labels(top_labels, opts.left_margin, cell_width, height, opts.header_height, opts.label_font,
     function(col, left_margin, cw)
       return left_margin + (col - 0.5) * cw
     end)
 
   -- Draw row labels (left)
-  draw_row_labels(left_labels, opts.left_margin, cell_height, opts.gap, box_area_height, opts.left_font)
+  draw_row_labels(left_labels, opts.left_margin, cell_height, opts.gap, box_area_height, opts.label_font)
 
   -- Draw each row as a single box with internal dotted dividers
   for row = 1, num_rows do

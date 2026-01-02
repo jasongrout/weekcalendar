@@ -1,3 +1,9 @@
+.DS_Store
+calendar-test.pdf
+calendar.pdf
+yeargrid-test.pdf
+yeargrid.pdf
+
 ## Core latex/pdflatex auxiliary files:
 *.aux
 *.lof

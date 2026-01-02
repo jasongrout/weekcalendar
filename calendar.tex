@@ -14,7 +14,7 @@ cfg = {
 
   -- Font sizes: \tiny \scriptsize \footnotesize \small \normalsize
   -- \large \Large \LARGE \huge \Huge
-  date_size = [[\small\bfseries]],   -- dates in each box
+  date_font = [[\small\bfseries]],   -- dates in each box
 }
 \end{luacode*}
 
@@ -81,6 +81,7 @@ function getWeekDates(year, week)
             end_date.day)
     end
 
+    -- Experiment: just show the start date
     -- formatted_date = string.format("%s %d",
     --   gridlib.month_names_short[start_date.month],
     --   start_date.day)
@@ -99,7 +100,7 @@ function draw_grid()
   local function cell_content(row, col)
     if c.print_dates then
       local year = c.start + row - 1
-      return string.format([[{%s %s}]], c.date_size, getWeekDates(year, col))
+      return string.format([[{%s %s}]], c.date_font, getWeekDates(year, col))
     end
     return ""
   end
@@ -108,12 +109,6 @@ function draw_grid()
   local paper_width, paper_height, grid_width, grid_height = gridlib.get_page_dimensions()
 
   gridlib.draw_grid_rowbox(grid_width, grid_height, top_labels, left_labels, {
-    top_font_size = c.week_num_size,
-    left_font_size = c.year_size,
-    left_margin = c.left_margin,
-    header_height = c.header_height,
-    gap = c.gap,
-    line_width = c.line_width,
     cell_content = cell_content,
     row_separator_interval = 5,
     row_separator_start = 5,  -- separator above 2030, 2035, 2040, ...
