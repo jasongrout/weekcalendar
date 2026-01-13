@@ -108,10 +108,11 @@ function draw_grid()
   -- Get grid dimensions from TeX (set by geometry package)
   local paper_width, paper_height, grid_width, grid_height = gridlib.get_page_dimensions()
 
+  local row_sep_start = (5 - (c.start % 5)) % 5  -- separator above first year divisible by 5
   gridlib.draw_grid_rowbox(grid_width, grid_height, top_labels, left_labels, {
     cell_content = cell_content,
     row_separator_interval = 5,
-    row_separator_start = 5,  -- separator above 2030, 2035, 2040, ...
+    row_separator_start = row_sep_start,
   })
 
   -- Print the pdfcrop command for test printing

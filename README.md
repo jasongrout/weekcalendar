@@ -76,7 +76,7 @@ Both calendars use `gridlib.lua` which provides two grid drawing functions. The 
 | `divider_style` | `dotted` | TikZ style for internal column dividers |
 | `cell_content` | nil | Function `(row, col)` returning TeX string for cell content |
 | `row_separator_interval` | 0 | Draw heavy line every N rows (0 to disable) |
-| `row_separator_start` | 1 | Row to start counting from for separators |
+| `row_separator_start` | 0 | Row index where first separator appears (both calendars auto-calculate this to align with years divisible by 5) |
 | `row_separator_width` | line_width | Line width for separators in points |
 
 ## Tips

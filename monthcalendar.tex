@@ -8,8 +8,8 @@ cfg = {
   paper_width = 24,        -- inches
   paper_height = 36,       -- inches
   margin = 0.8,            -- inches
-  start_year = 2004,       -- first year row
-  num_years = 21,          -- how many years (rows)
+  start_year = 2000,       -- first year row
+  num_years = 25,          -- how many years (rows)
 }
 \end{luacode*}
 
@@ -44,9 +44,10 @@ local paper_width, paper_height, grid_width, grid_height = gridlib.get_page_dime
 grid_height = grid_height - 0.05
 
 -- Draw the grid using TikZ
+local row_sep_start = (5 - (cfg.start_year % 5)) % 5  -- separator above first year divisible by 5
 gridlib.draw_grid_rowbox(grid_width, grid_height, top_labels, left_labels, {
   row_separator_interval = 5,
-  row_separator_start = 1,  -- separator above 2005, 2010, 2015, ...
+  row_separator_start = row_sep_start,
 })
 
 -- Print the pdfcrop command for test printing
