@@ -38,14 +38,13 @@ local top_labels = gridlib.month_names_short
 local left_labels = gridlib.number_range(cfg.start_year, cfg.num_years)
 
 -- Get grid dimensions from TeX (set by geometry package)
-local paper_width, paper_height, grid_width, grid_height = gridlib.get_page_dimensions()
+local paper_width, paper_height, text_width, text_height = gridlib.get_page_dimensions()
+local buffer = gridlib.pt2in(2)
 
--- Reduce height slightly to prevent overflow to second page
-grid_height = grid_height - 0.05
 
 -- Draw the grid using TikZ
 local row_sep_start = 5 - cfg.start_year % 5  -- separator above first year divisible by 5
-gridlib.draw_grid_rowbox(grid_width, grid_height, top_labels, left_labels, {
+gridlib.draw_grid_rowbox(text_width - buffer, text_height - buffer, top_labels, left_labels, {
   row_separator_interval = 5,
   row_separator_start = row_sep_start,
 })
