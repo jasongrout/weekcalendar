@@ -24,6 +24,7 @@ end
 
 -- Internal helper: draw row labels on the left side
 local function draw_row_labels(left_labels, left_margin, cell_height, gap, box_area_height, font)
+  if left_margin <= 0 then return end
   for row = 1, #left_labels do
     local x = left_margin / 2
     local y = box_area_height - (row - 1) * (cell_height + gap) - cell_height / 2
@@ -57,6 +58,7 @@ end
 
 -- Internal helper: draw column labels along the top
 local function draw_column_labels(top_labels, left_margin, cell_width, height, header_height, font, col_x_fn)
+  if header_height <= 0 then return end
   for col = 1, #top_labels do
     local x = col_x_fn(col, left_margin, cell_width)
     local y = height - header_height / 2
