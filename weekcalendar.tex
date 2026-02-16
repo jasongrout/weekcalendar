@@ -1,10 +1,8 @@
 \documentclass{article}
-\usepackage[xcharter]{fontsetup}
-
-% I think other good variants are the following, but the week dates aren't quite as readable at small sizes:
-% \usepackage[libertinus]{fontsetup}
-% \usepackage[default]{fontsetup}
-
+\usepackage{fontspec}
+\newfontfamily\charterfont{XCharter-Roman.otf}[
+  BoldFont=XCharter-Bold.otf,
+]
 
 \usepackage{luacode}
 
@@ -20,7 +18,7 @@ cfg = {
 
   -- Font sizes: \tiny \scriptsize \footnotesize \small \normalsize
   -- \large \Large \LARGE \huge \Huge
-  date_font = [[\small\bfseries]],   -- dates in each box
+  date_font = [[\small\bfseries\charterfont]],   -- dates in each box
 }
 \end{luacode*}
 
@@ -75,12 +73,14 @@ function getWeekDates(year, week)
     -- Format the output string
     local formatted_date
     if start_date.month == end_date.month then
-        formatted_date = string.format("%s %d--%d",
+        -- use an en dash, – (U+2013) instead of a hyphen, - (U+002D)
+        formatted_date = string.format("%s %d–%d",
             gridlib.month_names_short[start_date.month],
             start_date.day,
             end_date.day)
     else
-        formatted_date = string.format("%s %d--%s %d",
+        -- use an en dash, – (U+2013) instead of a hyphen, - (U+002D)
+        formatted_date = string.format("%s %d–%s %d",
             gridlib.month_names_short[start_date.month],
             start_date.day,
             gridlib.month_names_short[end_date.month],
