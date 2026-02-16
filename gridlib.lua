@@ -71,6 +71,9 @@ function gridlib.pt2in(pt)
   return pt / 72.0
 end
 
+-- Vertical offset from cell bottom to text baseline (in inches)
+local cell_content_baseline_offset = gridlib.pt2in(4)
+
 -- Convert TeX scaled points to inches
 -- TeX dimensions are stored in scaled points (sp), where 1pt = 65536sp
 function gridlib.sp2in(sp)
@@ -141,8 +144,9 @@ function gridlib.draw_grid(width, height, top_labels, left_labels, options)
       if opts.cell_content then
         local content = opts.cell_content(row, col)
         if content and content ~= "" then
-          tex.print(string.format([=[\node[anchor=south west, inner sep=2pt] at (%.4f, %.4f) {%s};]=],
-            x, y, content))
+          local baseline_y = y + cell_content_baseline_offset
+          tex.print(string.format([=[\node[anchor=base west, inner sep=2pt] at (%.4f, %.4f) {%s};]=],
+            x, baseline_y, content))
         end
       end
     end
@@ -222,8 +226,9 @@ function gridlib.draw_grid_rowbox(width, height, top_labels, left_labels, option
         local content = opts.cell_content(row, col)
         if content and content ~= "" then
           local cell_x = row_x + (col - 1) * cell_width
-          tex.print(string.format([=[\node[anchor=south west, inner sep=2pt] at (%.4f, %.4f) {%s};]=],
-            cell_x, row_y, content))
+          local baseline_y = row_y + cell_content_baseline_offset
+          tex.print(string.format([=[\node[anchor=base west, inner sep=2pt] at (%.4f, %.4f) {%s};]=],
+            cell_x, baseline_y, content))
         end
       end
     end
