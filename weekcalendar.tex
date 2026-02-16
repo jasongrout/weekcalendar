@@ -1,4 +1,10 @@
 \documentclass{article}
+\usepackage[xcharter]{fontsetup}
+
+% I think other good variants are the following, but the week dates aren't quite as readable at small sizes:
+% \usepackage[libertinus]{fontsetup}
+% \usepackage[default]{fontsetup}
+
 
 \usepackage{luacode}
 
@@ -106,11 +112,11 @@ function draw_grid()
   end
 
   -- Get grid dimensions from TeX (set by geometry package)
-  local paper_width, paper_height, grid_width, grid_height = gridlib.get_page_dimensions()
+  local paper_width, paper_height, text_width, text_height = gridlib.get_page_dimensions()
   local buffer = gridlib.pt2in(2)
 
   local row_sep_start = 5 - c.start % 5  -- separator above first year divisible by 5
-  gridlib.draw_grid_rowbox(grid_width - buffer, grid_height - buffer, top_labels, left_labels, {
+  gridlib.draw_grid_rowbox(text_width - buffer, text_height - buffer, top_labels, left_labels, {
     cell_content = cell_content,
     row_separator_interval = 5,
     row_separator_start = row_sep_start,
