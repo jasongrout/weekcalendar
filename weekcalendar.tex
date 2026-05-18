@@ -1,8 +1,51 @@
 \documentclass{article}
+
+% Uncomment if you want the headers to use Charter
+\usepackage[xcharter]{fontsetup}
+
 \usepackage{fontspec}
-\newfontfamily\charterfont{XCharter-Roman.otf}[
-  BoldFont=XCharter-Bold.otf,
-]
+\newcommand{\tabularnote}{}
+\defaultfontfeatures{Numbers=Tabular}\renewcommand{\tabularnote}{\textsuperscript{*}}
+
+% Date font for cell contents. Uncomment one to try it.
+\newfontfamily\datefont{XCharter-Roman.otf}[BoldFont=XCharter-Bold.otf]   \def\datefontname{XCharter}
+% \newfontfamily\datefont{Lexica Ultralegible}[BoldFont={Lexica Ultralegible Bold}]   \def\datefontname{Lexica Ultralegible}
+% \newfontfamily\datefont{AtkinsonHyperlegibleNext-Regular.otf}[BoldFont=AtkinsonHyperlegibleNext-Bold.otf]   \def\datefontname{Atkinson Hyperlegible Next}
+% \newfontfamily\datefont{Inter-Regular.otf}[BoldFont=Inter-Bold.otf]   \def\datefontname{Inter}
+% \newfontfamily\datefont{IBMPlexSans-Regular.otf}[BoldFont=IBMPlexSans-Bold.otf]   \def\datefontname{IBM Plex Sans}
+% \newfontfamily\datefont{Avenir Next}[BoldFont={Avenir Next Demi Bold}]                      \def\datefontname{Avenir Next}
+
+% Font preview: weeks to shift per row so a top-left crop cycles months.
+% 0 = real calendar. 4 ~ 1 month/row. 8 ~ 2 months/row.
+% \directlua{preview_shift = 8}
+
+
+% Heading font for grid labels (years and week numbers).
+% Uncomment one pair (font + name) to try it.
+% \newfontfamily\headingfont{DejaVuSans.ttf}[BoldFont=DejaVuSans-Bold.ttf]   \def\headingfontname{DejaVu Sans}
+\newfontfamily\headingfont{XCharter-Roman.otf}[BoldFont=XCharter-Bold.otf]   \def\headingfontname{XCharter}
+% \newfontfamily\headingfont{Fira Sans}[BoldFont={Fira Sans Bold}]           \def\headingfontname{Fira Sans}
+% \newfontfamily\headingfont{SourceSans3-Regular.otf}[BoldFont=SourceSans3-Bold.otf]  \def\headingfontname{Source Sans 3}
+
+% \newfontfamily\headingfont{Inter}[BoldFont={Inter Bold}]                   \def\headingfontname{Inter}
+% \newfontfamily\headingfont{DMSans_36pt-Regular.ttf}[BoldFont=DMSans_36pt-Bold.ttf]   \def\headingfontname{DM Sans (36pt)}
+% \newfontfamily\headingfont{TeX Gyre Heros}[BoldFont={TeX Gyre Heros Bold}] \def\headingfontname{TeX Gyre Heros}
+% \newfontfamily\headingfont{LibertinusSans-Regular.otf}[BoldFont=LibertinusSans-Bold.otf]        \def\headingfontname{Libertinus Sans}
+
+% --- Charter-pairing sans serifs (in preference order) ---
+% --- macOS system fonts ---
+% \newfontfamily\headingfont{Avenir Next}[BoldFont={Avenir Next Demi Bold}]                      \def\headingfontname{Avenir Next}
+% \newfontfamily\headingfont{Helvetica Neue}[BoldFont={Helvetica Neue Bold}]                    \def\headingfontname{Helvetica Neue}
+
+% --- TeX Live fonts ---
+% \newfontfamily\headingfont{NotoSans-Regular.ttf}[BoldFont=NotoSans-Bold.ttf]                \def\headingfontname{Noto Sans}
+% \newfontfamily\headingfont{Lato-Regular.ttf}[BoldFont=Lato-bold.ttf]                        \def\headingfontname{Lato}
+
+\usepackage{eso-pic}
+\AddToShipoutPictureFG{%
+  \AtPageUpperLeft{\put(30,-30){\sffamily \headingfontname\tabularnote}}%
+  \AtPageUpperLeft{\put(30,-38){\sffamily \datefontname\tabularnote}}%
+}
 
 \usepackage{luacode}
 
@@ -16,9 +59,11 @@ cfg = {
   start = 2025,            -- year of first row
   years = 25,              -- how many years
 
+
   -- Font sizes: \tiny \scriptsize \footnotesize \small \normalsize
   -- \large \Large \LARGE \huge \Huge
-  date_font = [[\small\bfseries\charterfont]],   -- dates in each box
+  date_font = [[\small\bfseries\datefont]],   -- dates in each box
+  label_font = [[\Huge\bfseries\headingfont]],   -- year and week-number labels
 }
 \end{luacode*}
 
@@ -115,6 +160,11 @@ function draw_grid()
   local function cell_content(row, col)
     if c.print_dates then
       local year = c.start + row - 1
+
+      if preview_shift ~= 0 then
+        col = ((col - 1 + (row - 1) * preview_shift) % 52) + 1
+      end
+
       local date_text = getWeekDates(year, col)
       if col == 52 and has53Weeks(year) then
         date_text = date_text .. [[\textsuperscript{*}]]
@@ -131,6 +181,7 @@ function draw_grid()
   local row_sep_start = 5 - c.start % 5  -- separator above first year divisible by 5
   gridlib.draw_grid_rowbox(text_width - buffer, text_height - buffer, top_labels, left_labels, {
     cell_content = cell_content,
+    label_font = c.label_font,
     row_separator_interval = 5,
     row_separator_start = row_sep_start,
   })
