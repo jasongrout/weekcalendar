@@ -40,6 +40,15 @@ cfg = {
 \begin{luacode*}
 local gridlib = require("gridlib")
 
+function has53Weeks(year)
+    -- ISO year has 53 weeks iff Jan 1 is a Thursday,
+    -- or the year is a leap year and Jan 1 is a Wednesday.
+    local jan1_wday = os.date("*t", os.time({year=year, month=1, day=1})).wday
+    local weekday = (jan1_wday == 1) and 7 or (jan1_wday - 1)  -- Mon=1..Sun=7
+    local is_leap = (year % 4 == 0 and year % 100 ~= 0) or (year % 400 == 0)
+    return weekday == 4 or (is_leap and weekday == 3)
+end
+
 function getWeekDates(year, week)
     -- Validate week number (1-53)
     if week < 1 or week > 53 then
@@ -106,7 +115,11 @@ function draw_grid()
   local function cell_content(row, col)
     if c.print_dates then
       local year = c.start + row - 1
-      return string.format([[{%s %s}]], c.date_font, getWeekDates(year, col))
+      local date_text = getWeekDates(year, col)
+      if col == 52 and has53Weeks(year) then
+        date_text = date_text .. [[\textsuperscript{*}]]
+      end
+      return string.format([[{%s %s}]], c.date_font, date_text)
     end
     return ""
   end
