@@ -5,7 +5,7 @@
 
 \usepackage{fontspec}
 \newcommand{\tabularnote}{}
-\defaultfontfeatures{Numbers=Tabular}\renewcommand{\tabularnote}{\textsuperscript{*}}
+% \defaultfontfeatures{Numbers=Tabular}\renewcommand{\tabularnote}{\textsuperscript{*}}
 
 % Date font for cell contents. Uncomment one to try it.
 \newfontfamily\datefont{XCharter-Roman.otf}[BoldFont=XCharter-Bold.otf]   \def\datefontname{XCharter}
@@ -17,7 +17,7 @@
 
 % Font preview: weeks to shift per row so a top-left crop cycles months.
 % 0 = real calendar. 4 ~ 1 month/row. 8 ~ 2 months/row.
-% \directlua{preview_shift = 8}
+\directlua{preview_shift = 0}
 
 
 % Heading font for grid labels (years and week numbers).
