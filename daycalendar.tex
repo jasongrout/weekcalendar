@@ -1,0 +1,126 @@
+\documentclass{article}
+\usepackage[xcharter]{fontsetup}
+
+\usepackage{luacode}
+
+% Configuration - all settings in one place
+\begin{luacode*}
+cfg = {
+  paper_width = 8.5,         -- inches
+  paper_height = 11,         -- inches
+  margin = .5,               -- inches
+  print_dates = true,        -- should dates be printed in every square?
+  num_rows = 15,             -- weeks (rows) to show
+
+  -- Starting Monday of the first row
+  start_year = 2026,
+  start_month = 5,
+  start_day = 18,
+
+  -- Font sizes: \tiny \scriptsize \footnotesize \small \normalsize
+  -- \large \Large \LARGE \huge \Huge
+  date_font  = [[\small\bfseries]],   -- day numbers in each cell
+  month_font = [[\small\bfseries]],   -- "Jun 1"-style label on month boundaries
+  label_font = [[\bfseries]],   -- day-of-week column headers
+  title_font = [[\Large\bfseries]],   -- year title at top of page
+}
+\end{luacode*}
+
+\begin{luacode*}
+local gridlib = require("gridlib")
+
+local DAY = 24 * 60 * 60
+
+-- Roll back to the Monday on or before the given date
+local function monday_on_or_before(t)
+  local wday = os.date("*t", t).wday  -- 1=Sun, 2=Mon, ..., 7=Sat
+  local mon_offset = (wday == 1) and 6 or (wday - 2)
+  return t - mon_offset * DAY
+end
+
+function draw_grid(start_year, start_month, start_day, num_rows)
+  local c = cfg
+
+  local start_date = monday_on_or_before(
+    os.time({year=start_year, month=start_month, day=start_day}))
+
+  texio.write_nl(string.format("Day calendar: %d weeks starting %s",
+    num_rows, os.date("%Y-%m-%d", start_date)))
+
+  -- Cell content: day-of-month, with "1 Mmm" on month boundaries
+  local function cell_content(row, col)
+    if not c.print_dates then return "" end
+    local t = start_date + ((row - 1) * 7 + (col - 1)) * DAY
+    local d = os.date("*t", t)
+    if d.day == 1 or (row == 1 and col == 1) then
+      return string.format([[{%s %s %d}]],
+        c.month_font, gridlib.month_names_short[d.month], d.day)
+    end
+    return string.format([[{%s %d}]], c.date_font, d.day)
+  end
+
+  -- Column headers: day-of-week names (Monday first)
+  local col_labels = {
+    "Monday", "Tuesday", "Wednesday", "Thursday",
+    "Friday", "Saturday", "Sunday",
+  }
+  local row_labels = {}
+  for i = 1, num_rows do row_labels[i] = "" end
+
+  local paper_width, paper_height, text_width, text_height = gridlib.get_page_dimensions()
+  local buffer = gridlib.pt2in(2)
+
+  -- Year title in the top margin (does not consume grid space)
+  local end_date = start_date + (num_rows * 7 - 1) * DAY
+  local start_y = os.date("*t", start_date).year
+  local end_y   = os.date("*t", end_date).year
+  local title = (start_y == end_y)
+    and tostring(start_y)
+    or string.format("%d\\,--\\,%d", start_y, end_y)
+  tex.print(string.format(
+    [[\AddToShipoutPictureFG*{\AtPageUpperLeft{\put(0,-%.4f){\makebox[\paperwidth]{%s %s}}}}]],
+    cfg.margin * 72 * 0.7, c.title_font, title))
+
+  gridlib.draw_grid_rowbox(text_width - buffer, text_height - buffer, col_labels, row_labels, {
+    cell_content = cell_content,
+    label_font   = c.label_font,
+    left_margin  = 0,
+    content_position = "top",
+    line_width   = 0.4,
+    gap          = 0.02,
+    divider_style = "dotted, line width=0.8pt",
+  })
+
+  gridlib.print_crop_command("daycalendar.pdf", paper_width, paper_height)
+
+  -- Return the next start date for chaining pages
+  local next_start = start_date + num_rows * 7 * DAY
+  local ns = os.date("*t", next_start)
+  return ns.year, ns.month, ns.day
+end
+\end{luacode*}
+
+\usepackage[
+  paperwidth=\directlua{tex.print(cfg.paper_width)}in,
+  paperheight=\directlua{tex.print(cfg.paper_height)}in,
+  margin=\directlua{tex.print(cfg.margin)}in,
+% Use showframe to show the margin space
+% showframe
+]{geometry}
+
+\usepackage{tikz}
+\usepackage{eso-pic}
+
+\setlength{\parindent}{0pt}
+\setlength{\topskip}{0pt}
+\setlength{\parskip}{0pt}
+\setlength{\baselineskip}{0pt}
+
+\begin{document}
+\thispagestyle{empty}%
+\directlua{next_year, next_month, next_day = draw_grid(cfg.start_year, cfg.start_month, cfg.start_day, cfg.num_rows)}
+
+% \newpage\thispagestyle{empty}%
+% \directlua{draw_grid(next_year, next_month, next_day, cfg.num_rows)}
+
+\end{document}

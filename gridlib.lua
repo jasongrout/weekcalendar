@@ -14,6 +14,7 @@ local function parse_grid_options(options)
     gap = options.gap or 0.06,
     line_width = options.line_width or 1.2,
     cell_content = options.cell_content,
+    content_position = options.content_position or "bottom",  -- "bottom" or "top"
     divider_style = options.divider_style,  -- default set below after line_width is known
     -- Row separator options
     row_separator_interval = options.row_separator_interval or 0,  -- 0 means disabled
@@ -140,13 +141,20 @@ function gridlib.draw_grid(width, height, top_labels, left_labels, options)
       tex.print(string.format([=[\draw[line width=%.1fpt] (%.4f, %.4f) rectangle (%.4f, %.4f);]=],
         opts.line_width, x, y, x + cell_width, y + cell_height))
 
-      -- Draw cell content if provided (bottom-left aligned)
+      -- Draw cell content if provided
       if opts.cell_content then
         local content = opts.cell_content(row, col)
         if content and content ~= "" then
-          local baseline_y = y + cell_content_baseline_offset
-          tex.print(string.format([=[\node[anchor=base west, inner sep=2pt] at (%.4f, %.4f) {%s};]=],
-            x, baseline_y, content))
+          local anchor, content_y
+          if opts.content_position == "top" then
+            anchor = "north west"
+            content_y = y + cell_height
+          else
+            anchor = "base west"
+            content_y = y + cell_content_baseline_offset
+          end
+          tex.print(string.format([=[\node[anchor=%s, inner sep=2pt] at (%.4f, %.4f) {%s};]=],
+            anchor, x, content_y, content))
         end
       end
     end
@@ -226,9 +234,16 @@ function gridlib.draw_grid_rowbox(width, height, top_labels, left_labels, option
         local content = opts.cell_content(row, col)
         if content and content ~= "" then
           local cell_x = row_x + (col - 1) * cell_width
-          local baseline_y = row_y + cell_content_baseline_offset
-          tex.print(string.format([=[\node[anchor=base west, inner sep=2pt] at (%.4f, %.4f) {%s};]=],
-            cell_x, baseline_y, content))
+          local anchor, content_y
+          if opts.content_position == "top" then
+            anchor = "north west"
+            content_y = row_y + cell_height
+          else
+            anchor = "base west"
+            content_y = row_y + cell_content_baseline_offset
+          end
+          tex.print(string.format([=[\node[anchor=%s, inner sep=2pt] at (%.4f, %.4f) {%s};]=],
+            anchor, cell_x, content_y, content))
         end
       end
     end
