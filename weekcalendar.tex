@@ -8,12 +8,18 @@
 % \defaultfontfeatures{Numbers=Tabular}\renewcommand{\tabularnote}{\textsuperscript{*}}
 
 % Date font for cell contents. Uncomment one to try it.
-\newfontfamily\datefont{XCharter-Roman.otf}[BoldFont=XCharter-Bold.otf]   \def\datefontname{XCharter}
+% \newfontfamily\datefont{XCharter-Roman.otf}[BoldFont=XCharter-Bold.otf]   \def\datefontname{XCharter}
 % \newfontfamily\datefont{Lexica Ultralegible}[BoldFont={Lexica Ultralegible Bold}]   \def\datefontname{Lexica Ultralegible}
 % \newfontfamily\datefont{AtkinsonHyperlegibleNext-Regular.otf}[BoldFont=AtkinsonHyperlegibleNext-Bold.otf]   \def\datefontname{Atkinson Hyperlegible Next}
 % \newfontfamily\datefont{Inter-Regular.otf}[BoldFont=Inter-Bold.otf]   \def\datefontname{Inter}
 % \newfontfamily\datefont{IBMPlexSans-Regular.otf}[BoldFont=IBMPlexSans-Bold.otf]   \def\datefontname{IBM Plex Sans}
-% \newfontfamily\datefont{Avenir Next}[BoldFont={Avenir Next Demi Bold}]                      \def\datefontname{Avenir Next}
+\newfontfamily\datefont{Avenir Next}[BoldFont={Avenir Next Demi Bold}]                      \def\datefontname{Avenir Next}
+
+% \newfontfamily\datefont{Bell-Centennial-Std-Address_6527.ttf}[BoldFont=Bell-Centennial-Std-Address_6527.ttf]   \def\datefontname{Bell Std Address}
+% \newfontfamily\datefont{Bell-Centennial-Std-Sub-Caption_6530.ttf}[BoldFont=Bell-Centennial-Std-Sub-Caption_6530.ttf]   \def\datefontname{Bell Std Subcaption}
+% \newfontfamily\datefont{Bell-Centennial-Std-Name---Number_6529.ttf}[BoldFont=Bell-Centennial-Std-Name---Number_6529.ttf]   \def\datefontname{Bell Std Name}
+% \newfontfamily\datefont{BellCentennialStd-BdListing.otf}[BoldFont=BellCentennialStd-BdListing.otf]   \def\datefontname{Bell bold}
+
 
 % Font preview: weeks to shift per row so a top-left crop cycles months.
 % 0 = real calendar. 4 ~ 1 month/row. 8 ~ 2 months/row.
@@ -23,7 +29,7 @@
 % Heading font for grid labels (years and week numbers).
 % Uncomment one pair (font + name) to try it.
 % \newfontfamily\headingfont{DejaVuSans.ttf}[BoldFont=DejaVuSans-Bold.ttf]   \def\headingfontname{DejaVu Sans}
-\newfontfamily\headingfont{XCharter-Roman.otf}[BoldFont=XCharter-Bold.otf]   \def\headingfontname{XCharter}
+% \newfontfamily\headingfont{XCharter-Roman.otf}[BoldFont=XCharter-Bold.otf]   \def\headingfontname{XCharter}
 % \newfontfamily\headingfont{Fira Sans}[BoldFont={Fira Sans Bold}]           \def\headingfontname{Fira Sans}
 % \newfontfamily\headingfont{SourceSans3-Regular.otf}[BoldFont=SourceSans3-Bold.otf]  \def\headingfontname{Source Sans 3}
 
@@ -34,18 +40,19 @@
 
 % --- Charter-pairing sans serifs (in preference order) ---
 % --- macOS system fonts ---
-% \newfontfamily\headingfont{Avenir Next}[BoldFont={Avenir Next Demi Bold}]                      \def\headingfontname{Avenir Next}
+% Next Medium, Next Demi Bold, Next Bold, Next Heavy
+% \newfontfamily\headingfont{Avenir Next}[BoldFont={Avenir Next Demi Bold}]                 \def\headingfontname{Avenir Next Medium}
 % \newfontfamily\headingfont{Helvetica Neue}[BoldFont={Helvetica Neue Bold}]                    \def\headingfontname{Helvetica Neue}
 
 % --- TeX Live fonts ---
-% \newfontfamily\headingfont{NotoSans-Regular.ttf}[BoldFont=NotoSans-Bold.ttf]                \def\headingfontname{Noto Sans}
+\newfontfamily\headingfont{NotoSans-Regular.ttf}[BoldFont=NotoSans-Bold.ttf]                \def\headingfontname{Noto Sans}
 % \newfontfamily\headingfont{Lato-Regular.ttf}[BoldFont=Lato-bold.ttf]                        \def\headingfontname{Lato}
 
-\usepackage{eso-pic}
-\AddToShipoutPictureFG{%
-  \AtPageUpperLeft{\put(30,-30){\sffamily \headingfontname\tabularnote}}%
-  \AtPageUpperLeft{\put(30,-38){\sffamily \datefontname\tabularnote}}%
-}
+% \usepackage{eso-pic}
+% \AddToShipoutPictureFG{%
+%   \AtPageUpperLeft{\put(30,-30){\sffamily \headingfontname\tabularnote}}%
+%   \AtPageUpperLeft{\put(30,-38){\sffamily \datefontname\tabularnote}}%
+% }
 
 \usepackage{luacode}
 
@@ -62,7 +69,7 @@ cfg = {
 
   -- Font sizes: \tiny \scriptsize \footnotesize \small \normalsize
   -- \large \Large \LARGE \huge \Huge
-  date_font = [[\small\bfseries\datefont]],   -- dates in each box
+  date_font = [[\footnotesize\bfseries\datefont]],   -- dates in each box
   label_font = [[\Huge\bfseries\headingfont]],   -- year and week-number labels
 }
 \end{luacode*}

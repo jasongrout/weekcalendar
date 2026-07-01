@@ -83,3 +83,23 @@ Both calendars use `gridlib.lua` which provides two grid drawing functions. The 
 
 - Uncomment `showframe` in the geometry package options to visualize margins while adjusting layout.
 - After generating, use the printed `pdfcrop` command to extract an 8.5x11 test section for printing before committing to a large format print.
+
+
+# Font selection
+
+For small sizes, it is helpful to select a font that:
+
+1. Has consistent baseline for numbers for a clean look (no old-style numbers)
+2. Has an open 6 (so not Inter, for example) - otherwise the 6 looks too much like an 8.
+3. Has a large x-height
+
+Some of the best free fonts for small text I've found are:
+
+- Bitstream Charter (or XCharter)
+- Avenir Next
+- IBM Plex Sans
+
+Apparently some commercial fonts good for very small sizes:
+
+- [Retina MicroPlus](https://frerejones.com/families/retina)
+- [Bell Centennial](https://fonts.adobe.com/fonts/bell-centennial-std) (see [history](https://ananthpai.com/bell-centennial/))
