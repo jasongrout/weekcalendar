@@ -15,6 +15,7 @@ local function parse_grid_options(options)
     line_width = options.line_width or 1.2,
     cell_content = options.cell_content,
     content_position = options.content_position or "bottom",  -- "bottom" or "top"
+    top_positioned_labels = options.top_positioned_labels,  -- array of {pos, text}; pos in fractional column units
     divider_style = options.divider_style,  -- default set below after line_width is known
     -- Row separator options
     row_separator_interval = options.row_separator_interval or 0,  -- 0 means disabled
@@ -68,6 +69,19 @@ local function draw_column_labels(top_labels, left_margin, cell_width, height, h
   end
 end
 
+-- Internal helper: draw labels at arbitrary fractional column positions along the top
+-- labels: array of {pos = <fractional column units from left edge of column 1>, text = <string>}
+-- col_unit: width of one column unit in inches (cell width plus any inter-cell gap)
+local function draw_positioned_column_labels(labels, left_margin, col_unit, height, header_height, font)
+  if header_height <= 0 then return end
+  for i = 1, #labels do
+    local x = left_margin + labels[i].pos * col_unit
+    local y = height - header_height / 2
+    tex.print(string.format([=[\node[font=%s] at (%.4f, %.4f) {%s};]=],
+      font, x, y, labels[i].text))
+  end
+end
+
 function gridlib.pt2in(pt)
   return pt / 72.0
 end
@@ -104,6 +118,8 @@ end
 --     gap: gap between boxes in inches (default: 0.04)
 --     line_width: box border thickness in points (default: 0.4)
 --     cell_content: function(row, col) returning TeX string for cell content (default: nil)
+--     top_positioned_labels: array of {pos, text} drawn along the top instead of top_labels;
+--       pos is in fractional column units from the left edge of column 1 (default: nil)
 --     row_separator_interval: draw horizontal line every N rows (0 to disable, default: 0)
 --     row_separator_start: row to start counting from for separators (default: 1)
 --     row_separator_width: line width for separators in points (default: line_width)
@@ -125,10 +141,15 @@ function gridlib.draw_grid(width, height, top_labels, left_labels, options)
   tex.print([=[\noindent\begin{tikzpicture}[x=1in, y=1in]]=])
 
   -- Draw column labels (top) - x position accounts for gap between cells
-  draw_column_labels(top_labels, opts.left_margin, cell_width, height, opts.header_height, opts.label_font,
-    function(col, left_margin, cw)
-      return left_margin + (col - 1) * (cw + opts.gap) + cw / 2
-    end)
+  if opts.top_positioned_labels then
+    draw_positioned_column_labels(opts.top_positioned_labels, opts.left_margin, cell_width + opts.gap,
+      height, opts.header_height, opts.label_font)
+  else
+    draw_column_labels(top_labels, opts.left_margin, cell_width, height, opts.header_height, opts.label_font,
+      function(col, left_margin, cw)
+        return left_margin + (col - 1) * (cw + opts.gap) + cw / 2
+      end)
+  end
 
   -- Draw row labels (left)
   draw_row_labels(left_labels, opts.left_margin, cell_height, opts.gap, box_area_height, opts.label_font)
@@ -204,10 +225,15 @@ function gridlib.draw_grid_rowbox(width, height, top_labels, left_labels, option
   tex.print([=[\noindent\begin{tikzpicture}[x=1in, y=1in]]=])
 
   -- Draw column labels (top) - x position centered in cell (no gap between cells)
-  draw_column_labels(top_labels, opts.left_margin, cell_width, height, opts.header_height, opts.label_font,
-    function(col, left_margin, cw)
-      return left_margin + (col - 0.5) * cw
-    end)
+  if opts.top_positioned_labels then
+    draw_positioned_column_labels(opts.top_positioned_labels, opts.left_margin, cell_width,
+      height, opts.header_height, opts.label_font)
+  else
+    draw_column_labels(top_labels, opts.left_margin, cell_width, height, opts.header_height, opts.label_font,
+      function(col, left_margin, cw)
+        return left_margin + (col - 0.5) * cw
+      end)
+  end
 
   -- Draw row labels (left)
   draw_row_labels(left_labels, opts.left_margin, cell_height, opts.gap, box_area_height, opts.label_font)

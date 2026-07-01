@@ -65,6 +65,7 @@ cfg = {
   print_dates = true,      -- should dates be printed in every square?
   start = 2025,            -- year of first row
   years = 25,              -- how many years
+  month_labels = false,     -- true: month names across the top; false: week numbers
 
 
   -- Font sizes: \tiny \scriptsize \footnotesize \small \normalsize
@@ -156,6 +157,24 @@ function getWeekDates(year, week)
     return formatted_date
 end
 
+function monthLabelPositions()
+    -- Position of each month name along the top, in fractional week-column
+    -- units. The middle day of month m falls (roughly, for any year) at
+    -- day-of-year D, which lands about D/7 column units from the left edge
+    -- of week 1.
+    local month_days = {31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31}
+    local labels = {}
+    local cum = 0
+    for m = 1, 12 do
+        labels[m] = {
+            pos = (cum + month_days[m] / 2) / 7,
+            text = gridlib.month_names[m],
+        }
+        cum = cum + month_days[m]
+    end
+    return labels
+end
+
 function draw_grid()
   local c = cfg -- shorthand
 
@@ -191,6 +210,7 @@ function draw_grid()
     label_font = c.label_font,
     row_separator_interval = 5,
     row_separator_start = row_sep_start,
+    top_positioned_labels = c.month_labels and monthLabelPositions() or nil,
   })
 
   -- Print the pdfcrop command for test printing

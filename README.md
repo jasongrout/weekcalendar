@@ -36,9 +36,17 @@ cfg = {
   print_dates = true,      -- show date ranges in every square
   start = 2025,            -- year of first row
   years = 25,              -- how many years (rows)
-  date_font = [[\small\bfseries]],  -- font for dates in each box
+  month_labels = false,    -- true: month names across the top; false: week numbers
+  date_font = [[\footnotesize\bfseries\datefont]],   -- font for dates in each box
+  label_font = [[\Huge\bfseries\headingfont]],       -- font for year and header labels
 }
 ```
+
+With `month_labels = true`, the header shows month names instead of week
+numbers, with each name centered over the weeks that make up that month. The
+positions are approximate: a month's middle day of year, converted to weeks.
+Actual ISO week boundaries shift by a day or two from year to year, so a
+single header row can only ever be roughly aligned for all rows.
 
 ## Month Calendar
 
@@ -62,9 +70,39 @@ cfg = {
 }
 ```
 
+## Day Calendar
+
+Generate a letter-size calendar with one row per week and a column for each day
+of the week (Monday first). Day numbers are printed in each cell, with the
+month abbreviation shown on month boundaries, and the year (or year range) as a
+title at the top.
+
+```
+lualatex daycalendar.tex
+```
+
+### Configuration
+
+Edit the `cfg` table at the top of `daycalendar.tex`:
+
+```lua
+cfg = {
+  paper_width = 8.5,         -- inches
+  paper_height = 11,         -- inches
+  margin = .5,               -- inches
+  print_dates = true,        -- print day numbers in every square
+  num_rows = 15,             -- weeks (rows) to show
+
+  -- Starting Monday of the first row (rolls back to Monday if not one)
+  start_year = 2026,
+  start_month = 5,
+  start_day = 18,
+}
+```
+
 ## Grid Library Options
 
-Both calendars use `gridlib.lua` which provides two grid drawing functions. The `draw_grid_rowbox` function (used by both) accepts these options:
+The calendars use `gridlib.lua`, which provides two grid drawing functions (`draw_grid` with gaps between cells, and `draw_grid_rowbox` with each row as one box and dotted internal dividers). Both accept these options:
 
 | Option | Default | Description |
 |--------|---------|-------------|
@@ -75,6 +113,7 @@ Both calendars use `gridlib.lua` which provides two grid drawing functions. The 
 | `line_width` | 1.2 | Box border thickness in points |
 | `divider_style` | `dotted` | TikZ style for internal column dividers |
 | `cell_content` | nil | Function `(row, col)` returning TeX string for cell content |
+| `top_positioned_labels` | nil | Array of `{pos, text}` drawn along the top instead of the per-column labels; `pos` is in fractional column units from the left edge of column 1 |
 | `row_separator_interval` | 0 | Draw heavy line every N rows (0 to disable) |
 | `row_separator_start` | 0 | Row index where first separator appears (both calendars auto-calculate this to align with years divisible by 5) |
 | `row_separator_width` | line_width | Line width for separators in points |
@@ -86,6 +125,10 @@ Both calendars use `gridlib.lua` which provides two grid drawing functions. The 
 
 
 # Font selection
+
+The week calendar's `date_font` and `label_font` use the `\datefont` and
+`\headingfont` families defined at the top of `weekcalendar.tex` — uncomment a
+different `\newfontfamily` line there to try another pairing.
 
 For small sizes, it is helpful to select a font that:
 
