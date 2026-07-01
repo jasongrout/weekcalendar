@@ -74,10 +74,12 @@ end
 -- col_unit: width of one column unit in inches (cell width plus any inter-cell gap)
 local function draw_positioned_column_labels(labels, left_margin, col_unit, height, header_height, font)
   if header_height <= 0 then return end
+  -- Anchor on a shared baseline (rather than centering each node) so months
+  -- with descenders don't hang lower than the rest and crowd the grid.
+  local y = height - header_height + 0.38 * header_height
   for i = 1, #labels do
     local x = left_margin + labels[i].pos * col_unit
-    local y = height - header_height / 2
-    tex.print(string.format([=[\node[font=%s] at (%.4f, %.4f) {%s};]=],
+    tex.print(string.format([=[\node[font=%s, anchor=base, inner sep=0pt] at (%.4f, %.4f) {%s};]=],
       font, x, y, labels[i].text))
   end
 end
